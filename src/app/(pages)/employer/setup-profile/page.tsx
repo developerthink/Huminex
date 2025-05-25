@@ -136,7 +136,7 @@ const EditProfileForm = () => {
     <div className="flex items-center justify-center min-h-screen overflow-hidden w-full bg-slate-100">
       <Card className="max-w-6xl w-full mx-auto p-8  rounded-xl shadow-lg">
         <div className="flex items-center gap-2">
-          <Image src="/logo.png" alt="Logo" width={50} height={50} />
+          <Image src="/logo.png" alt="Logo" width={50} height={50} className="brightness-105"/>
           <h2 className="text-2xl font-semibold  text-gray-800">
             Setup Profile
           </h2>

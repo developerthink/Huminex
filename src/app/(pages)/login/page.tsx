@@ -23,7 +23,7 @@ export default function page() {
             <Image
               src="/logo.png"
               alt="Logo"
-              className=" bg-gradient-to-br from-slate-400 to-white rounded-lg"
+              className="brightness-105"
               width={80}
               height={80}
             />
