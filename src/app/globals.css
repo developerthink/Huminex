@@ -1,0 +1,237 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.19 0.01 248.51);
+  --card: oklch(0.98 0 197.14);
+  --card-foreground: oklch(0.19 0.01 248.51);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.19 0.01 248.51);
+  --primary: oklch(0.48 0.2009 271.21);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.19 0.01 248.51);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.92 0 286.37);
+  --muted-foreground: oklch(0.19 0.01 248.51);
+  --accent: oklch(0.94 0.02 250.85);
+  --accent-foreground: oklch(0.48 0.2009 271.21);
+  --destructive: oklch(0.62 0.24 25.77);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.89 0.01 0);
+  --input: oklch(0.89 0.01 0);
+  --ring: oklch(0.48 0.2009 271.21/80%);
+  --chart-1: oklch(0.48 0.2009 271.21);
+  --chart-2: oklch(0.69 0.16 160.35);
+  --chart-3: oklch(0.82 0.16 82.53);
+  --chart-4: oklch(0.71 0.18 151.71);
+  --chart-5: oklch(0.59 0.22 10.58);
+  --sidebar: oklch(0.98 0 197.14);
+  --sidebar-foreground: oklch(0.19 0.01 248.51);
+  --sidebar-primary: oklch(0.48 0.2009 271.21);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.94 0.02 250.85);
+  --sidebar-accent-foreground: oklch(0.48 0.2009 271.21);
+  --sidebar-border: oklch(0.93 0.01 238.52);
+  --sidebar-ring: oklch(0.48 0.2009 271.21);
+  --font-primary: "Work Sans", system-ui, -apple-system, sans-serif;
+  --font-secondary: "Syne", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --radius: 1.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-primary: var(--font-primary);
+  --font-secondary: var(--font-secondary);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-primary font-bold;
+  }
+}
+
+@layer utilities {
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.bgGrad {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='10' numOctaves='3' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0 0'/%3E%3CfeFuncG type='table' tableValues='0 0'/%3E%3CfeFuncB type='table' tableValues='0 0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.3'/%3E%3C/svg%3E"),
+    radial-gradient(
+      circle at 84.59302325581395% 18.13953488372093%,
+      #6299f2 0px,
+      transparent 80%
+    ),
+    radial-gradient(
+      circle at 100% 96.74418604651163%,
+      #5746d9 0px,
+      transparent 80%
+    );
+  background-color: black;
+  background-blend-mode: overlay, normal, normal;
+}
+
+.jobList .tablenex_thead-row {
+  color: white !important;
+}
+
+.wbloader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid var(--input);
+  border-bottom-color: var(--primary);
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.rainbowBtn {
+  cursor: pointer;
+  border-radius: 50px;
+  width: 100%;
+  position: relative;
+  z-index: 0;
+}
+.rainbowBtn a {
+  text-decoration: none;
+  text-wrap: nowrap;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 100);
+}
+.rainbowBtn:before {
+  content: "";
+  background: linear-gradient(
+    45deg,
+    #ff0000,
+    #ff7300,
+    #fffb00,
+    #48ff00,
+    #00ffd5,
+    var(--primary),
+    #7a00ff,
+    #ff00c8,
+    #ff0000
+  );
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(5px);
+  -webkit-filter: blur(5px);
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  animation: glowing-rainbowBtn-85 20s linear infinite;
+  transition: opacity 0.3s ease-in-out;
+  border-radius: 50px;
+}
+@keyframes glowing-rainbowBtn-85 {
+  0% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 400% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+.rainbowBtn:after {
+  z-index: -1;
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: oklch(0.48 0.2009 271.21);
+  left: 0;
+  top: 0;
+  border-radius: 50px;
+}
+.tablenex_header-cell{
+  color: white !important;
+}

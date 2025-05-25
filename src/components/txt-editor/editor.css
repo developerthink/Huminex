@@ -1,0 +1,69 @@
+.rich-text-editor {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+  
+  .editor-content {
+    padding: 1rem;
+      outline: none;
+  }
+  
+  .editor-content:focus-within {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2);
+  }
+  
+  /* Typography styling */
+  .editor-content h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .editor-content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .editor-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .editor-content p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+  }
+  
+  .editor-content ul,
+  .editor-content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .editor-content li {
+    margin-bottom: 0.25rem;
+  }
+  
+  .editor-content blockquote {
+    border-left: 3px solid hsl(var(--primary));
+    padding-left: 1rem;
+    margin-left: 0;
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+  }
+  
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.5rem;
+  }
+  
