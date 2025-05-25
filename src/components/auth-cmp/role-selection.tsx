@@ -62,7 +62,7 @@ export default function RoleSelection() {
     <div>
       <Card className="flex flex-col items-center p-10 w-full max-w-2xl">
         <div className="flex flex-col items-center mb-8">
-          <Image src="/logo.png" alt="Logo" width={80} height={80} />
+          <Image src="/logo.png" alt="Logo" width={80} height={80} className="brightness-105"/>
           <h1 className="text-2xl font-bold text-gray-900">Select User Type</h1>
         </div>
 

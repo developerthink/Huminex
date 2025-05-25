@@ -145,7 +145,7 @@ const ProfileSetupPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center flex-col gap-3 p-4">
       <div className="flex items-center gap-2">
-        <Image src="/logo.png" alt="Logo" width={80} height={80} />
+        <Image src="/logo.png" alt="Logo" width={80} height={80} className="brightness-105" />
         <h2 className="text-2xl font-semibold ">Set Up Your Profile</h2>
       </div>
       <Card className="max-w-3xl bg-white p-7 w-full">
