@@ -28,6 +28,7 @@ import {
   Infinity,
 } from "lucide-react"
 import Link from "next/link"
+import Logo from "@/components/logo"
 
 export default function HuminexLanding() {
   return (
@@ -39,9 +40,7 @@ export default function HuminexLanding() {
         <div className="max-w-7xl mx-auto">
           <div className="glass rounded-3xl px-8 py-4 flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 animate-glow">
-                <Brain className="w-6 h-6 text-primary" />
-              </div>
+              <Logo/>
               <span className="text-2xl font-primary font-bold text-white">Huminex</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
