@@ -67,7 +67,7 @@ export const getApplicationDetails = async (appId: string) => {
 };
 
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[0],
   baseURL: "https://api.groq.com/openai/v1",
   timeout: 10000, // 30 second timeout
 });
