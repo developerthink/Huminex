@@ -63,7 +63,7 @@ const page = () => {
         return;
       }
       toast.success('Job deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
       setDeleteJobId(null);
     },
     onError: (error: any) => {
@@ -186,11 +186,6 @@ const page = () => {
           <h3 className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${row.difficultyLevel === "easy" ? "text-green-500 bg-green-500/30" : row.difficultyLevel === "medium" ? "bg-yellow-500/30 text-yellow-500" : "bg-red-500/30 text-red-500"}`}>{row.difficultyLevel}</h3>
         ),
     },
-    { accessor: "techStack", header: "Tech Stack",
-        render: (_: any, row: any) => (
-          <h3 className="text-nowrap truncate hover:w-auto hover:text-wrap w-[100px]">{row.techStack.join(", ")}</h3>
-        ),
-    },
     { 
       accessor: "actions", 
       header: "Actions",
@@ -228,7 +223,7 @@ const page = () => {
             onOpenChange={(open) => !open && setEditingJobId(null)}
             onSubmit={() => {
               setEditingJobId(null);
-              queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
+              queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
             }}
           />
         </div>
