@@ -365,7 +365,7 @@ export default function RecruitmentDashboard() {
 
             <h3 className="text-lg font-semibold mb-2">Recent Job Posts</h3>
             {jobTableData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8">
+              <div className="flex flex-col bg-white items-center justify-center py-8">
                 <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
                   <Clipboard className="h-8 w-8 text-gray-400" />
                 </div>
@@ -398,7 +398,7 @@ export default function RecruitmentDashboard() {
 
             <h3 className="text-lg font-semibold mb-2 mt-6">Recent Responses</h3>
             {applicationTableData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8">
+              <div className="flex flex-col bg-white items-center justify-center py-8">
                 <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
                   <MessageSquare className="h-8 w-8 text-gray-400" />
                 </div>
