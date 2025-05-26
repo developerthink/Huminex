@@ -40,13 +40,25 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
 
   const applyMutation = useMutation({
     mutationFn: () => applyForJob(job._id),
+    onMutate: () => {
+      const myPromise = applyForJob(job._id);
+      toast.promise(myPromise, {
+        loading: 'Applying for the job...',
+        success: (data: any) => {
+          router.push(`/interview/${data.data.applicationId}`); 
+          return 'Successfully applied for the job!';
+ 
+        },
+        error: (error: any) => {
+          return error.message || 'Failed to apply for the job';
+        },
+      });
+    },
     onSuccess: async (data) => {
-      toast.success("Successfully applied for the job!");
-      await queryClient.invalidateQueries({ queryKey: ["jobs"] });
-      router.push(`/interview/${data.data.applicationId}`);
+      await queryClient.invalidateQueries({ queryKey: ['jobs'] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to apply for the job");
+      toast.error(error.message || 'Failed to apply for the job');
     },
   });
 
@@ -160,11 +172,11 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
           Posted {formatTimeAgo(job.createdAt)}
         </p> */}
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size={hasMore ? "default" : "sm"}>
             Details
           </Button>
           <Button
-            size="sm"
+            size={hasMore ? "default" : "sm"}
             onClick={handleApply}
             disabled={applyMutation.isPending}
             className={applyMutation.isPending ? "opacity-75 cursor-not-allowed" : ""}

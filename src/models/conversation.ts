@@ -8,12 +8,13 @@ const ConversationSchema = new Schema<ConversationType>(
       ref: "Application",
       required: [true, "Interview must be associated with an application"],
     },
-    currentQuestion: {
+    interviewerResponse: {
       type: String,
-      required: [true, "Current question is required"],
+      required: [true, "Interviewer response is required"],
     },
-    previousUserResponseAnalysis:{
+    candidateResponse: {
       type: String,
+      required: [true, "Candidate response is required"],
     },
   },
   {

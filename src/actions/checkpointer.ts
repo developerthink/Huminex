@@ -6,7 +6,15 @@ import Application from "@/models/application";
 import { auth } from "@/auth";
 import OpenAI from "openai";
 
-export async function createConversation(appId: string, body: any) {
+export async function createConversation({
+  appId,
+  interviewerResponse,
+  candidateResponse,
+}: {
+  appId: string;
+  interviewerResponse: string;
+  candidateResponse: string;
+}) {
   const session = await auth();
   if (!session) {
     throw new Error("Unauthorized");
@@ -14,22 +22,26 @@ export async function createConversation(appId: string, body: any) {
 
   try {
     await connectDB();
-
-    // Check if candidate has applied for this job
     const application = await Application.findById(appId);
 
     if (!application) {
       throw new Error("You have not applied for this job");
     }
 
+    const parsedResponse = JSON.parse(interviewerResponse);
     // Create a new conversation
     const newConversation = await Conversation.create({
       appId: appId,
-      currentQuestion: body.currentQuestion,
-      previousUserResponseAnalysis: JSON.stringify(
-        body.previousUserResponseAnalysis
-      ),
+      interviewerResponse: interviewerResponse,
+      candidateResponse: candidateResponse,
     });
+
+    console.log(parsedResponse);
+    if (parsedResponse.isEnded) {
+      await Application.findByIdAndUpdate("683433e47fc08198d18478ec", {
+        interviewstatus: "COMPLETED",
+      });
+    }
 
     return {
       error: null,
@@ -156,7 +168,7 @@ export const getConversationAnalytics = async (appId: string) => {
     }
 
     // Process and prepare data for analysis
-    const processedData = conversations.map((conv : any, index : number) => {
+    const processedData = conversations.map((conv: any, index: number) => {
       const analysisData = conv.previousUserResponseAnalysis
         ? JSON.parse(conv.previousUserResponseAnalysis)
         : {};
@@ -179,10 +191,11 @@ export const getConversationAnalytics = async (appId: string) => {
         conversations.length > 0
           ? new Date(
               (conversations[conversations.length - 1] as any).createdAt
-            ).getTime() - new Date((conversations[0] as any).createdAt).getTime()
+            ).getTime() -
+            new Date((conversations[0] as any).createdAt).getTime()
           : 0,
       completionRate:
-        (conversations.filter((c : any) => c.userResponse).length /
+        (conversations.filter((c: any) => c.userResponse).length /
           conversations.length) *
         100,
     };
@@ -199,7 +212,9 @@ export const getConversationAnalytics = async (appId: string) => {
     const response = await chatOpenAI(serializedData);
 
     // Parse the AI response
-    const aiAnalysis = JSON.parse(response.choices[0].message.content as string);
+    const aiAnalysis = JSON.parse(
+      response.choices[0].message.content as string
+    );
 
     // Add some computed metrics
     const enhancedAnalysis = {
@@ -278,5 +293,24 @@ export const getAnalyticsSummary = async (appId: string) => {
   } catch (error) {
     console.error("Error in getAnalyticsSummary:", error);
     throw error;
+  }
+};
+
+export const fetchAllConversations = async (appId: string) => {
+  try {
+    const conversations = await Conversation.find({
+      appId: appId,
+    });
+    const serializeData = JSON.parse(JSON.stringify(conversations));
+    return {
+      data: serializeData,
+      error: null,
+    };
+  } catch (error) {
+    console.error("Error fetching conversations:", error);
+    return {
+      data: [],
+      error: error,
+    };
   }
 };

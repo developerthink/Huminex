@@ -15,8 +15,8 @@ const ApplicationSchema = new Schema<ApplicationType>(
     },
     interviewstatus: {
       type: String,
-      enum: ["PENDING", "IN-COMPLETED", "COMPLETED"],
-      default: "PENDING",
+      enum: ["IN-COMPLETED", "COMPLETED"],
+      default: "IN-COMPLETED",
       required: [true, "Application status is required"],
     },
     hiringStatus: {

@@ -9,6 +9,7 @@ import connectDB from "@/config/db";
 import type { JobInput } from "@/app/api/job/schema";
 import OpenAI from "openai";
 import { systemPrompt } from "@/lib/system-prompt";
+import { createConversation } from "./checkpointer";
 
 type CreateJobResponse = {
   error: string | null;
@@ -112,216 +113,97 @@ export async function createJob(data: JobInput): Promise<CreateJobResponse> {
   }
 }
 
-// Array of Groq API keys
+const openai = new OpenAI({
+  apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[0],
+  baseURL: "https://api.groq.com/openai/v1",
+  timeout: 30000, // 30 second timeout (increased from 10s)
+});
 
-const openaiApiKeys = JSON.parse(process.env.OPENAI_API_KEY as string);
-let openaiLastSuccessfulKeyIndex: number = 0;
-
-type ChatResponse = {
-  response: string;
-  context: { role: "user" | "assistant" | "system"; content: string }[];
-  apiKeyIndex?: number;
-  error?: string;
-  isInitialGreeting?: boolean;
-};
-
-interface InterviewState {
-  currentQuestion: string;
-  previousUserResponseAnalysis?: string;
-  interviewStage: "greeting" | "technical" | "behavioral" | "closing";
-  questionCount: number;
-  candidateResponses: string[];
-}
-
-
-// Utility to clean and validate JSON response
-function parseAndValidateResponse(responseText: string): InterviewState | null {
+export const chatAction = async ({
+  query,
+  context,
+  appData,
+}: {
+  query: string;
+  context: { role: "user" | "assistant"; content: string }[];
+  appData: any;
+}) => {
   try {
-    // Remove any markdown formatting or extra text
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    const cleanJson = jsonMatch ? jsonMatch[0] : responseText;
+    // Build messages array with proper system prompt
+    const messages: Array<{
+      role: "system" | "user" | "assistant";
+      content: string;
+    }> = [
+      {
+        role: "system",
+        content:systemPrompt(appData)
+      },
+    ];
 
-    const parsed = JSON.parse(cleanJson);
+    // Add context messages
+    context.forEach((msg) => {
+      messages.push({
+        role: msg.role === "user" ? "user" : "assistant",
+        content: msg.content,
+      });
+    });
 
-    // Validate required fields
-    if (!parsed.currentQuestion || typeof parsed.currentQuestion !== "string") {
-      throw new Error("Invalid or missing currentQuestion");
+    // Add current query if provided
+    if (query && query.trim()) {
+      messages.push({
+        role: "user",
+        content: query,
+      });
     }
 
-    // Set defaults for missing fields
+    //isEnding:
+
+    const response = await openai.chat.completions.create({
+      model: "gemma2-9b-it",
+      messages,
+      temperature: 0.7, 
+      max_tokens: 1500, 
+      top_p: 0.9,
+      frequency_penalty: 0.1, 
+      presence_penalty: 0.1,
+    });
+
+    const content = response.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new Error("No response content received from AI");
+    }
+    const cleanContent = content.replace(/^```json\s*|\s*```$/gm, "").trim();
+    
+    await createConversation({ appId: appData._id as string, interviewerResponse:cleanContent, candidateResponse:query});
+
     return {
-      currentQuestion: parsed.currentQuestion.trim(),
-      previousUserResponseAnalysis: parsed.previousUserResponseAnalysis || "",
-      interviewStage: parsed.interviewStage || "greeting",
-      questionCount: parsed.questionCount || 1,
-      candidateResponses: parsed.candidateResponses || [],
+      data: cleanContent,
+      error: null,
     };
   } catch (error) {
-    console.error("JSON parsing error:", error);
-    return null;
-  }
-}
+    console.error("Chat action error:", error);
 
-// Generate fallback response for error scenarios
-function generateFallbackResponse(
-  context: any[],
-  query: string
-): InterviewState {
-  const isFirstMessage = context.length <= 1;
+    let errorMessage = "Internal server error";
 
-  if (isFirstMessage) {
-    return {
-      currentQuestion:
-        "Hello! Welcome to your AI interview. I'm excited to learn more about you today. Let's start with a simple question: Could you please tell me a bit about yourself and your background?",
-      previousUserResponseAnalysis: "",
-      interviewStage: "greeting",
-      questionCount: 1,
-      candidateResponses: [],
-    };
-  }
-
-  return {
-    currentQuestion:
-      "I apologize, but I didn't quite catch that. Could you please repeat or elaborate on your response?",
-    previousUserResponseAnalysis: "Technical difficulty encountered",
-    interviewStage: "technical",
-    questionCount: context.length,
-    candidateResponses: [],
-  };
-}
-
-export async function chatAction(
-  query: string,
-  context: { role: "user" | "assistant" | "system"; content: string }[],
-  apiKeyIndex?: number
-): Promise<ChatResponse> {
-  // Handle initial greeting
-  if (!query || query.trim().length === 0) {
-    const greeting = generateFallbackResponse([], "");
-    return {
-      response: JSON.stringify(greeting),
-      context: [
-        { role: "system", content: systemPrompt() },
-        { role: "assistant", content: JSON.stringify(greeting) },
-      ],
-      isInitialGreeting: true,
-    };
-  }
-
-  // Prevent context from getting too large (memory management)
-  const MAX_CONTEXT_LENGTH = 50;
-  let trimmedContext = context;
-  if (context.length > MAX_CONTEXT_LENGTH) {
-    // Keep system prompt and recent messages
-    const systemPrompt = context.find((msg) => msg.role === "system");
-    const recentMessages = context.slice(-MAX_CONTEXT_LENGTH + 1);
-    trimmedContext = systemPrompt
-      ? [systemPrompt, ...recentMessages]
-      : recentMessages;
-  }
-
-  const newContext = [
-    { role: "system", content: systemPrompt() },
-    ...trimmedContext.filter((msg) => msg.role !== "system"), // Remove duplicate system messages
-    { role: "user", content: query.trim() },
-  ];
-
-  // Determine starting API key
-  const startIndex =
-    apiKeyIndex !== undefined &&
-    apiKeyIndex >= 0 &&
-    apiKeyIndex < openaiApiKeys.length
-      ? apiKeyIndex
-      : openaiLastSuccessfulKeyIndex;
-
-  let lastError: any = null;
-
-  // Try all API keys with exponential backoff
-  for (let attempt = 0; attempt < openaiApiKeys.length; attempt++) {
-    const keyIndex = (startIndex + attempt) % openaiApiKeys.length;
-    const apiKey = openaiApiKeys[keyIndex];
-
-    try {
-      const openai = new OpenAI({
-        apiKey,
-        baseURL: "https://api.groq.com/openai/v1",
-        timeout: 10000, // 30 second timeout
-      });
-
-      const response = await openai.chat.completions.create({
-        model: "gemma2-9b-it",
-        messages: newContext as any,
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 1000,
-      });
-
-      const responseText = response.choices[0].message.content;
-
-      if (!responseText) {
-        throw new Error("Empty response from API");
-      }
-
-      // Parse and validate the response
-      const parsedResponse = parseAndValidateResponse(responseText);
-
-      if (!parsedResponse) {
-        throw new Error("Invalid JSON response format");
-      }
-
-      const updatedContext = [
-        ...newContext,
-        { role: "assistant", content: responseText },
-      ];
-
-      // Success: update last successful key index
-      openaiLastSuccessfulKeyIndex = keyIndex;
-
-      return {
-        response: responseText,
-        context: updatedContext as any,
-        apiKeyIndex: keyIndex,
-      };
-    } catch (error: any) {
-      console.error(
-        `API key ${keyIndex} failed (attempt ${attempt + 1}):`,
-        error.message
-      );
-      lastError = error;
-
-      // Check for rate limiting
-      if (
-        error.status === 429 ||
-        error.message?.includes("rate_limit_exceeded")
-      ) {
-        // Wait before trying next key for rate limits
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        continue;
-      }
-
-      // For other errors, try next key immediately
-      if (attempt < openaiApiKeys.length - 1) {
-        continue;
+    if (error instanceof Error) {
+      if (error.message.includes("timeout")) {
+        errorMessage = "Request timeout - please try again";
+      } else if (error.message.includes("rate limit")) {
+        errorMessage = "Rate limit exceeded - please wait a moment";
+      } else if (error.message.includes("network")) {
+        errorMessage = "Network error - please check your connection";
+      } else {
+        errorMessage = error.message;
       }
     }
+
+    return {
+      data: null,
+      error: errorMessage,
+    };
   }
-
-  // All API keys failed - use fallback
-  console.error("All API keys exhausted, using fallback response");
-  const fallbackResponse = generateFallbackResponse(trimmedContext, query);
-  const fallbackContext = [
-    ...newContext,
-    { role: "assistant", content: JSON.stringify(fallbackResponse) },
-  ];
-
-  return {
-    response: JSON.stringify(fallbackResponse),
-    context: fallbackContext as any,
-    error: `API temporarily unavailable: ${
-      lastError?.message || "Unknown error"
-    }`,
-  };
-}
+};
 
 // Array of ElevenLabs API keys
 const elevenlabsApiKeys = JSON.parse(process.env.ELEVENLABS_API_KEY as string);
