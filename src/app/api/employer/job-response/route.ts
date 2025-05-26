@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       }
     ]);
 
-    revalidatePath("/employer/dashboard/job-response");
+    revalidatePath("/employer/dashboard/all-applicants");
 
     return NextResponse.json({
       error: null,
