@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
 import WbLoader from '@/components/global-cmp/wbLoader';
+import { toast } from 'sonner';
 
 type HiringStatus = 'PENDING' | 'HIRED' | 'REJECTED';
 
@@ -29,6 +30,7 @@ const JobDetailsPage = () => {
     mutationFn: ({ applicationId, status }: { applicationId: string; status: HiringStatus }) =>
       updateHiringStatus(applicationId, status),
     onSuccess: () => {
+      toast.success('Status updated successfully');
       queryClient.invalidateQueries({ queryKey: ['jobApplications', jobId] });
     },
   });
@@ -64,10 +66,6 @@ const JobDetailsPage = () => {
 
   const tableData = applicationsData?.data ? formatData(applicationsData.data) : [];
 
-  if (isLoading) {
-    return <WbLoader />;
-  }
-
   if (!applicationsData?.data?.length) {
     return <div className="flex items-center justify-center h-96">No applications found for this job</div>;
   }
@@ -95,7 +93,8 @@ const JobDetailsPage = () => {
             PRIMARY: "var(--background)",
             SECONDARY: "#F5F7F6",
           }}
-          data={tableData}
+          noDataMessage={isLoading ? <WbLoader /> : "No applications found for this job"}
+          data={tableData || []}
         />
       </div>
     </div>

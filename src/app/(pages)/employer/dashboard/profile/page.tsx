@@ -67,7 +67,7 @@ const fetchUserData = async (): Promise<UserProfileData> => {
   try {
     const { data } = await axios.get<{ error: null | string; data: { companyDetails: any } }>('/api/user');
     if (data.error) throw new Error(data.error);
-    
+
     const companyDetails = data.data?.companyDetails || {};
     return {
       name: companyDetails.name || '',
@@ -101,16 +101,16 @@ const EditProfileForm: React.FC = () => {
     queryFn: fetchUserData,
   });
   const [formValues, setFormValues] = React.useState<FormValues>(() => ({
-    name: data?.name || '',
-    linkedIn: data?.linkedIn || '',
-    website: data?.website || '',
-    numEmployees: data?.numEmployees || '',
-    location: data?.location || '',
-    industryType: data?.industryType || '',
-    companyType: data?.companyType || '',
-    about: data?.about || '<p>Start writing something brilliant...</p>',
-    tagline: data?.tagline || '',
-    twitter: data?.twitter || '',
+    name: '',
+    linkedIn: '',
+    website: '',
+    numEmployees: '',
+    location: '',
+    industryType: '',
+    companyType: '',
+    about: '<p>Start writing something brilliant...</p>',
+    tagline: '',
+    twitter: '',
   }));
   const [logo, setLogo] = React.useState<File | null>(null);
   const [logoUrl, setLogoUrl] = React.useState<string>('');
@@ -203,7 +203,7 @@ const EditProfileForm: React.FC = () => {
         <h1 className="text-2xl font-bold">Manage your profile</h1>
         <p className="text-sm ">Manage your profile here</p>
       </div>
-      <br/>
+      <br />
       {isLoading ? (
         <div className="flex justify-center items-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
@@ -290,20 +290,19 @@ const EditProfileForm: React.FC = () => {
                   Industry Type
                 </Label>
                 <Select
-                  value={formValues.industryType}
+                  key={`industry-${formValues.industryType}`}
+                  value={formValues.industryType || undefined}
                   onValueChange={(value) => handleSelectChange('industryType', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select industry">
-                      {formValues.industryType || 'Select industry'}
-                    </SelectValue>
+                    <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="Architecture Planning">
+                      Architecture Planning
+                    </SelectItem>
                     <SelectItem value="Technology">Technology</SelectItem>
                     <SelectItem value="Finance">Finance</SelectItem>
-                    <SelectItem value="Healthcare">Healthcare</SelectItem>
-                    <SelectItem value="Education">Education</SelectItem>
-                    <SelectItem value="Architecture Planning">Architecture Planning</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -313,19 +312,23 @@ const EditProfileForm: React.FC = () => {
                   Company Type
                 </Label>
                 <Select
-                  value={formValues.companyType}
+                  key={`company-${formValues.companyType}`}
+                  value={formValues.companyType || undefined}
                   onValueChange={(value) => handleSelectChange('companyType', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select company type">
-                      {formValues.companyType || 'Select company type'}
-                    </SelectValue>
+                    <SelectValue placeholder="Select company type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Private Limited">Private Limited</SelectItem>
-                    <SelectItem value="Public Limited">Public Limited</SelectItem>
-                    <SelectItem value="Limited Partnership (LP)">Limited Partnership (LP)</SelectItem>
-                    <SelectItem value="Sole Proprietorship">Sole Proprietorship</SelectItem>
+                    <SelectItem value="Limited Partnership (LP)">
+                      Limited Partnership (LP)
+                    </SelectItem>
+                    <SelectItem value="Private Limited">
+                      Private Limited
+                    </SelectItem>
+                    <SelectItem value="Public Limited">
+                      Public Limited
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

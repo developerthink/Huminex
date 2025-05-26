@@ -2,7 +2,7 @@
 import React from "react";
 import TableNex from "react-tablenex";
 import "react-tablenex/style.css";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -10,12 +10,24 @@ import {
 } from "@/components/ui/popover";
 import { MoreHorizontal, Pencil, Trash } from "lucide-react";
 import CreateJob from "@/components/employer-cmp/create-job";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import axios from "axios";
 import { JobType } from "@/types/models/job";
 import { toast } from "sonner";
 import Link from 'next/link';
 import WbLoader from "@/components/global-cmp/wbLoader";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MdErrorOutline } from 'react-icons/md';
+
+const fetchJobs = async () => {
+  const response = await axios.get('/api/employer/jobs');
+  return response.data.data;
+};
+
+const deleteJob = async (jobId: string) => {
+  const response = await axios.delete(`/api/job/${jobId}`);
+  return response.data;
+};
 
 const page = () => {
   interface TableJobType {
@@ -32,41 +44,104 @@ const page = () => {
     actions: React.ReactNode;
   }
 
+  const queryClient = useQueryClient();
   const [tableData, setTableData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleEdit = (job: JobType) => {
-    console.log("job on edit", job)
-    setEditingJobId(job._id);
-  };
+  const { data: jobs, isLoading, error } = useQuery({
+    queryKey: ['emp-jobs'],
+    queryFn: fetchJobs
+  });
 
-  const handleDelete = async (jobId: string) => {
-    setDeleteJobId(jobId);
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteJobId) return;
-    setIsDeleting(true);
-    try {
-      const response = await axios.delete(`/api/job/${deleteJobId}`);
-      if (response.data.error) {
-        toast.error(response.data.error);
+  const deleteMutation = useMutation({
+    mutationFn: deleteJob,
+    onSuccess: (data) => {
+      if (data.error) {
+        toast.error(data.error);
         return;
       }
       toast.success('Job deleted successfully');
-      window.location.reload();
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
+      setDeleteJobId(null);
+    },
+    onError: (error: any) => {
       console.error('Error deleting job:', error);
       toast.error('Failed to delete job');
-    } finally {
-      setIsDeleting(false);
       setDeleteJobId(null);
     }
+  });
+
+  React.useEffect(() => {
+    if (jobs) {
+      const tableData = jobs.map((job: any) => ({
+        id: job._id,
+        jobTitle: <Link href={`/employer/dashboard/jobs/applications/${job._id}`} className="text-primary hover:underline">{job.title}</Link>,
+        jobType: job.jobType,
+        location: job.location,
+        ctcRange: `${job.salaryRange.start} - ${job.salaryRange.end} LPA`,
+        workExperience: job.workExperience,
+        openings: job.interviewSettings.maxCandidates,
+        interviewDuration: job.interviewSettings.interviewDuration,
+        difficultyLevel: job.interviewSettings.difficultyLevel,
+        techStack: job.techStack,
+        actions: (
+          <div className="flex items-center justify-center">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="p-2 hover:bg-gray-100 rounded-full">
+                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-2">
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleEdit(job)}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(job._id)}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm text-red-600"
+                  >
+                    <Trash className="h-4 w-4" />
+                    Delete
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <CreateJob 
+              jobToEdit={job} 
+              isEditing={true} 
+              open={editingJobId === job._id}
+              onOpenChange={(open) => !open && setEditingJobId(null)}
+              onSubmit={() => {
+                setEditingJobId(null);
+              }}
+            />
+          </div>
+        ),
+        ...job
+      }));
+      setTableData(tableData);
+    }
+  }, [jobs]);
+
+  const handleEdit = (job: JobType) => {
+    console.log("job on edit", job);
+    setEditingJobId(job._id);
+  };
+
+  const handleDelete = (jobId: string) => {
+    setDeleteJobId(jobId);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteJobId) return;
+    deleteMutation.mutate(deleteJobId);
   };
 
   const customColumns = [
@@ -153,86 +228,13 @@ const page = () => {
             onOpenChange={(open) => !open && setEditingJobId(null)}
             onSubmit={() => {
               setEditingJobId(null);
-              window.location.reload();
+              queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
             }}
           />
         </div>
       ),
     },
   ];
-
-  const fetchJobs = async () => {
-    try {
-      const response = await axios.get('/api/employer/jobs');
-      if (response.data.error) {
-        setError(response.data.error || 'Failed to fetch jobs');
-        setLoading(false);
-        return;
-      }
-      const jobs = response.data.data;
-      const tableData = jobs.map((job:any) => ({
-        id: job._id,
-        jobTitle: <Link href={`/employer/dashboard/jobs/applications/${job._id}`} className="text-primary hover:underline">{job.title}</Link>,
-        jobType: job.jobType,
-        location: job.location,
-        ctcRange: `${job.salaryRange.start} - ${job.salaryRange.end} LPA`,
-        workExperience: job.workExperience,
-        openings: job.interviewSettings.maxCandidates,
-        interviewDuration: job.interviewSettings.interviewDuration,
-        difficultyLevel: job.interviewSettings.difficultyLevel,
-        techStack: job.techStack,
-        actions: (
-          <div className="flex items-center justify-center">
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="p-2 hover:bg-gray-100 rounded-full">
-                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-40 p-2">
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => handleEdit(job)}
-                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(job._id)}
-                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm text-red-600"
-                  >
-                    <Trash className="h-4 w-4" />
-                    Delete
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
-            <CreateJob 
-              jobToEdit={job} 
-              isEditing={true} 
-              open={editingJobId === job._id}
-              onOpenChange={(open) => !open && setEditingJobId(null)}
-              onSubmit={() => {
-                setEditingJobId(null);
-                window.location.reload();
-              }}
-            />
-          </div>
-        ),
-        ...job
-      }));
-      setTableData(tableData);
-      setLoading(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch jobs');
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
 
   const handleInviteCandidate = (jobId: string) => {
     console.log(`Inviting candidate for job ${jobId}`);
@@ -248,8 +250,17 @@ const page = () => {
     setActiveMenu(activeMenu === jobId ? null : jobId);
   };
 
-  if (loading) {
-    return <WbLoader />;
+  // if (isLoading) {
+  //   return <WbLoader />;
+  // }
+
+  if (error) {
+    return (
+      <div className="gap-2 p-8 grid place-items-baseline w-full">
+        <h1 className="text-2xl font-bold">All Jobs</h1>
+        <p className="text-sm text-red-500 flex flex-col gap-2"><MdErrorOutline className='w-8 h-8' />{error?.message || 'Error loading jobs'}</p>
+      </div>
+    );
   }
 
   return (
@@ -260,7 +271,7 @@ const page = () => {
       </div>
       <br />
       <TableNex
-      columns={customColumns}
+        columns={customColumns}
         styles={{
           spacing: "lg",
           rounded: "lg",
@@ -275,7 +286,8 @@ const page = () => {
           PRIMARY: "var(--background)",
           SECONDARY: "#F5F7F6",
         }}
-        data={tableData}
+        noDataMessage={isLoading ? <WbLoader /> : "No jobs found"}
+        data={tableData || []}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -296,10 +308,10 @@ const page = () => {
             </button>
             <button
               onClick={confirmDelete}
-              disabled={isDeleting}
+              disabled={deleteMutation.isPending}
               className="ml-3 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {isDeleting ? (
+              {deleteMutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Deleting...
