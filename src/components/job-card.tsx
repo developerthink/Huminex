@@ -13,7 +13,13 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 
@@ -33,32 +39,23 @@ const applyForJob = async (jobId: string) => {
   return data;
 };
 
-const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) => {
+const JobCard: React.FC<JobCardProps> = ({
+  job,
+  hasMore = true,
+}: JobCardProps) => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [bookmarked, setBookmarked] = useState(false);
 
   const applyMutation = useMutation({
     mutationFn: () => applyForJob(job._id),
-    onMutate: () => {
-      const myPromise = applyForJob(job._id);
-      toast.promise(myPromise, {
-        loading: 'Applying for the job...',
-        success: (data: any) => {
-          router.push(`/interview/${data.data.applicationId}`); 
-          return 'Successfully applied for the job!';
- 
-        },
-        error: (error: any) => {
-          return error.message || 'Failed to apply for the job';
-        },
-      });
-    },
-    onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    onSuccess: (data) => {
+      toast.success("Successfully applied for the job!");
+      router.push(`/interview/${data.data.applicationId}`);
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to apply for the job');
+      toast.error(error.message || "Failed to apply for the job");
     },
   });
 
@@ -83,7 +80,9 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
             <CardTitle className="text-lg font-semibold text-gray-900">
               {job.title}
             </CardTitle>
-            <p className="text-sm text-gray-500">{job.employerId.companyDetails.name}</p>
+            <p className="text-sm text-gray-500">
+              {job.employerId.companyDetails.name}
+            </p>
           </div>
         </div>
         <div className="flex space-x-2">
@@ -95,7 +94,9 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
           >
             <Bookmark
               size={18}
-              className={bookmarked ? "fill-blue-600 text-blue-600" : "text-gray-500"}
+              className={
+                bookmarked ? "fill-blue-600 text-blue-600" : "text-gray-500"
+              }
             />
           </Button>
           <Button variant="ghost" size="icon" aria-label="Share job">
@@ -114,57 +115,57 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
           </Badge>
         </div>
 
-        {
-          hasMore && (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {job.techStack.map((skill: string, index: number) => (
-                  <Badge key={index} className="bg-gray-100 text-gray-700">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
+        {hasMore && (
+          <>
+            <div className="flex flex-wrap gap-2">
+              {job.techStack.map((skill: string, index: number) => (
+                <Badge key={index} className="bg-gray-100 text-gray-700">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  {
-                    icon: <DollarSign size={16} className="text-gray-500" />,
-                    label: "Salary",
-                    value: `${job.salaryRange.start} - ${job.salaryRange.end} LPA`,
-                  },
-                  {
-                    icon: <Clock size={16} className="text-gray-500" />,
-                    label: "Duration",
-                    value: `${job.interviewSettings.interviewDuration} mins`,
-                  },
-                  {
-                    icon: <Briefcase size={16} className="text-gray-500" />,
-                    label: "Experience",
-                    value: `${job.workExperience} years`,
-                  },
-                  {
-                    icon: <Calendar size={16} className="text-gray-500" />,
-                    label: "Job Type",
-                    value: job.jobType,
-                  },
-                  {
-                    icon: <Users size={16} className="text-gray-500" />,
-                    label: "Openings",
-                    value: job.interviewSettings.maxCandidates,
-                  },
-                ].map((detail, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    {detail.icon}
-                    <div>
-                      <p className="text-xs text-gray-500">{detail.label}</p>
-                      <p className="text-sm font-medium text-gray-900">{detail.value}</p>
-                    </div>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                {
+                  icon: <DollarSign size={16} className="text-gray-500" />,
+                  label: "Salary",
+                  value: `${job.salaryRange.start} - ${job.salaryRange.end} LPA`,
+                },
+                {
+                  icon: <Clock size={16} className="text-gray-500" />,
+                  label: "Duration",
+                  value: `${job.interviewSettings.interviewDuration} mins`,
+                },
+                {
+                  icon: <Briefcase size={16} className="text-gray-500" />,
+                  label: "Experience",
+                  value: `${job.workExperience} years`,
+                },
+                {
+                  icon: <Calendar size={16} className="text-gray-500" />,
+                  label: "Job Type",
+                  value: job.jobType,
+                },
+                {
+                  icon: <Users size={16} className="text-gray-500" />,
+                  label: "Openings",
+                  value: job.interviewSettings.maxCandidates,
+                },
+              ].map((detail, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  {detail.icon}
+                  <div>
+                    <p className="text-xs text-gray-500">{detail.label}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {detail.value}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </>
-          )
-        }
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </CardContent>
 
       <CardFooter className="flex justify-between items-center border-t pt-4">
@@ -172,8 +173,8 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
           Posted {formatTimeAgo(job.createdAt)}
         </p> */}
         <div className="flex space-x-2">
-<Link href={`/jobs/${job._id}`} target="_blank">
-            <Button variant="outline" size="sm">
+          <Link href={`/jobs/${job._id}`} target="_blank">
+            <Button variant="outline" size={hasMore ? "default" : "sm"}>
               Details
             </Button>
           </Link>
@@ -181,7 +182,9 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
             size={hasMore ? "default" : "sm"}
             onClick={handleApply}
             disabled={applyMutation.isPending}
-            className={applyMutation.isPending ? "opacity-75 cursor-not-allowed" : ""}
+            className={
+              applyMutation.isPending ? "opacity-75 cursor-not-allowed" : ""
+            }
           >
             {applyMutation.isPending ? "Applying..." : "Apply Now"}
           </Button>
