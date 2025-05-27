@@ -324,12 +324,13 @@ const AgentModel = () => {
             60 *
             1000 || 10 * 60 * 1000
         ); // 10 minutes in milliseconds
-        const initialQuery = `{candidateResponse: "", isNearEnd: false}`;
+        const initialQuery = `{candidateResponse: "hello", isNearEnd: false}`;
         const result = await chatAction({
           query: initialQuery,
           context: [],
           appData: applicationData,
         });
+        console.log(result.data, "This is aiResponse");
 
         if (!result.data) {
           throw new Error(result.error || "Failed to initialize interview");
@@ -337,7 +338,7 @@ const AgentModel = () => {
 
         const parsedResponse = JSON.parse(result.data);
         const { aiResponse } = parsedResponse;
-
+           console.log(aiResponse, "This is aiResponse");
         setContext([{ role: "assistant", content: result.data }]);
         setInterviewState("active");
 
