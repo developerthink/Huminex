@@ -12,6 +12,7 @@ import CreateJob from "@/components/employer-cmp/create-job";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import NotificationDropdown from "@/components/candidate-cmp/notification-dropdown";
+import Logout from "@/components/global-cmp/logout";
 
 const DbLayout = async ({ children }: { children: React.ReactNode }) => {
     const session = await auth();
@@ -20,7 +21,7 @@ const DbLayout = async ({ children }: { children: React.ReactNode }) => {
     }
   return(
     <div className="flex gap-2 h-screen overflow-hidden bg-slate-100">
-      <aside className="h-full w-60 p-3">
+      <aside className="h-full w-60 p-3 relative">
         <Logo className="ml-3" />
         <br />
         <CreateJob/>
@@ -29,7 +30,7 @@ const DbLayout = async ({ children }: { children: React.ReactNode }) => {
             [
               {name: "Home", href: "/employer/dashboard", icon: TbSmartHome},
               {name: "Jobs", href: "/employer/dashboard/jobs", icon: GoBriefcase},
-              {name: "Job Response", href: "/employer/dashboard/job-response", icon: SlSpeech},
+              {name: "All Applicants", href: "/employer/dashboard/all-applicants", icon: SlSpeech},
               {name: "Profile", href: "/employer/dashboard/profile", icon: GoPerson},
               {name: "Notifications", href: "/employer/dashboard/notifications", icon: GoBell},
             ].map((item) => (
@@ -41,9 +42,8 @@ const DbLayout = async ({ children }: { children: React.ReactNode }) => {
               </li>
             ))
           }
-        </ul>
-       
-
+        </ul>       
+        <Logout/>
       </aside>
       <main className="bg-white rounded-xl p-3 m-4 ml-0 flex-1 overflow-hidden flex flex-col">
     <header className=" p-1 shrink-0 px-2 border-b flex items-center justify-between">
