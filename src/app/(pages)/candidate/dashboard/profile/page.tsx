@@ -12,6 +12,7 @@ import NavTabs from '@/components/candidate-cmp/profile/NavTabs';
 import { fetchUserData, updateUserProfile } from '@/lib/api-functions/home.api';
 import { updateCandidateProfile } from '@/actions/profile.action';
 import WbLoader from '@/components/global-cmp/wbLoader';
+import Link from 'next/link';
 
 
 const UserProfilePage: React.FC = () => {
@@ -68,7 +69,7 @@ const UserProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <UserHeader 
