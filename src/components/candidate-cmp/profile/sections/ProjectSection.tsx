@@ -27,7 +27,9 @@ interface ProjectFormData {
   link: string;
   technologies: string[];
 }
+import mongoose from "mongoose";
 
+const generatedId = new mongoose.Types.ObjectId();
 const ProjectSection: React.FC<ProjectSectionProps> = ({ 
   projects: initialProjects, 
   onUpdateUser,
@@ -71,7 +73,7 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({
   const handleAdd = async () => {
     const newProject = {
       ...formData,
-      _id: Date.now().toString(), // Temporary ID, will be replaced by DB
+      _id: generatedId.toString(), // Temporary ID, will be replaced by DB
     };
     const newProjects = [...projects, newProject];
     await onUpdateUser(newProjects);

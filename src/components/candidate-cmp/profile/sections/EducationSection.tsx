@@ -27,6 +27,9 @@ interface EducationFormData {
   fieldOfStudy: string;
   degree: string;
 }
+import mongoose from "mongoose";
+
+const generatedId = new mongoose.Types.ObjectId();
 
 const EducationSection: React.FC<EducationSectionProps> = ({ 
   educationDetails: initialEducationDetails, 
@@ -53,7 +56,7 @@ const EducationSection: React.FC<EducationSectionProps> = ({
   const handleAdd = async () => {
     const newEducation = {
       ...formData,
-      _id: Date.now().toString(), // Temporary ID, will be replaced by DB
+      _id:generatedId.toString(), // Temporary ID, will be replaced by DB
     };
     const newEducationDetails = [...educationDetails, newEducation];
     await onUpdateUser(newEducationDetails);

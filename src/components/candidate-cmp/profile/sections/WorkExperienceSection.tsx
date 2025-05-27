@@ -65,7 +65,9 @@ const initialFormData: WorkExperienceFormData = {
   description: '',
   technologies: [],
 };
+import mongoose from "mongoose";
 
+const generatedId = new mongoose.Types.ObjectId();
 const WorkExperienceSection: React.FC<WorkExperienceSectionProps> = ({ 
   experience: initialExperience, 
   onUpdateUser,
@@ -138,7 +140,7 @@ const WorkExperienceSection: React.FC<WorkExperienceSectionProps> = ({
 
     const newExperience = {
       ...formData,
-      _id: Date.now().toString(), // Temporary ID, will be replaced by DB
+      _id: generatedId.toString(), // Temporary ID, will be replaced by DB
       endDate: formData.isCurrent ? undefined : formData.endDate, // Clear endDate if isCurrent is true
     };
     const newExperiences = [...experiences, newExperience];
@@ -604,6 +606,7 @@ const WorkExperienceSection: React.FC<WorkExperienceSectionProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <br />
       <div className="flex justify-between items-center mb-3 flex-col bg-muted/30 shadow rounded-xl w-fit mx-auto p-5 px-10">
         <h3 className="text-lg font-semibold text-gray-800">
           Work Experience
