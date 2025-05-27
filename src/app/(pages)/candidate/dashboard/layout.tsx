@@ -67,7 +67,7 @@ console.log(session)
       <main className="bg-white rounded-xl p-3 m-4 ml-0 flex-1 overflow-hidden flex flex-col">
         <header className=" p-1 shrink-0 px-2 border-b flex items-center justify-between">
           <div className="flex items-center gap-2 divide-x *:px-1">
-            <button>
+            <button disabled={true} className="opacity-50">
               <TbArrowBarToLeft className="w-5 h-5" />
             </button>
             <StatusMenu/>

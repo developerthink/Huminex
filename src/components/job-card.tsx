@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import Image from "next/image";
-import { formatTimeAgo } from "@/lib/formate-time-ago";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -102,57 +102,57 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
           </Badge>
         </div>
 
-      {
-        hasMore && (
-          <>
-          <div className="flex flex-wrap gap-2">
-          {job.techStack.map((skill: string, index: number) => (
-            <Badge key={index} className="bg-gray-100 text-gray-700">
-              {skill}
-            </Badge>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            {
-              icon: <DollarSign size={16} className="text-gray-500" />,
-              label: "Salary",
-              value: `${job.salaryRange.start} - ${job.salaryRange.end} LPA`,
-            },
-            {
-              icon: <Clock size={16} className="text-gray-500" />,
-              label: "Duration",
-              value: `${job.interviewSettings.interviewDuration} mins`,
-            },
-            {
-              icon: <Briefcase size={16} className="text-gray-500" />,
-              label: "Experience",
-              value: `${job.workExperience} years`,
-            },
-            {
-              icon: <Calendar size={16} className="text-gray-500" />,
-              label: "Job Type",
-              value: job.jobType,
-            },
-            {
-              icon: <Users size={16} className="text-gray-500" />,
-              label: "Openings",
-              value: job.interviewSettings.maxCandidates,
-            },
-          ].map((detail, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              {detail.icon}
-              <div>
-                <p className="text-xs text-gray-500">{detail.label}</p>
-                <p className="text-sm font-medium text-gray-900">{detail.value}</p>
+        {
+          hasMore && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {job.techStack.map((skill: string, index: number) => (
+                  <Badge key={index} className="bg-gray-100 text-gray-700">
+                    {skill}
+                  </Badge>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-        </>
-        )
-      }
+
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  {
+                    icon: <DollarSign size={16} className="text-gray-500" />,
+                    label: "Salary",
+                    value: `${job.salaryRange.start} - ${job.salaryRange.end} LPA`,
+                  },
+                  {
+                    icon: <Clock size={16} className="text-gray-500" />,
+                    label: "Duration",
+                    value: `${job.interviewSettings.interviewDuration} mins`,
+                  },
+                  {
+                    icon: <Briefcase size={16} className="text-gray-500" />,
+                    label: "Experience",
+                    value: `${job.workExperience} years`,
+                  },
+                  {
+                    icon: <Calendar size={16} className="text-gray-500" />,
+                    label: "Job Type",
+                    value: job.jobType,
+                  },
+                  {
+                    icon: <Users size={16} className="text-gray-500" />,
+                    label: "Openings",
+                    value: job.interviewSettings.maxCandidates,
+                  },
+                ].map((detail, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    {detail.icon}
+                    <div>
+                      <p className="text-xs text-gray-500">{detail.label}</p>
+                      <p className="text-sm font-medium text-gray-900">{detail.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )
+        }
       </CardContent>
 
       <CardFooter className="flex justify-between items-center border-t pt-4">
@@ -160,9 +160,11 @@ const JobCard: React.FC<JobCardProps> = ({ job, hasMore = true }: JobCardProps) 
           Posted {formatTimeAgo(job.createdAt)}
         </p> */}
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            Details
-          </Button>
+          <Link href={`/jobs/${job._id}`} target="_blank">
+            <Button variant="outline" size="sm">
+              Details
+            </Button>
+          </Link>
           <Button
             size="sm"
             onClick={handleApply}
