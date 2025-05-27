@@ -339,7 +339,7 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
         return;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
+      await queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
 
       toast.success(isEditing ? 'Job updated successfully' : 'Job created successfully');
       router.push('/employer/dashboard/jobs');
