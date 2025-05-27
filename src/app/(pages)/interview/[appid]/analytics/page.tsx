@@ -1,518 +1,573 @@
 "use client";
-
-import { useQuery } from '@tanstack/react-query';
-import { getConversationAnalytics } from '@/actions/checkpointer';
-import dynamic from 'next/dynamic';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  LineElement,
-  PointElement,
-  RadarController,
-  RadialLinearScale,
-  Title,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import {
+  RadarChart,
+  Radar,
+  RadialBar,
+  RadialBarChart,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-} from 'chart.js';
-import { useMemo } from 'react';
-import { useParams } from 'next/navigation';
+  ResponsiveContainer,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Cell,
+} from "recharts";
+import {
+  User,
+  MessageSquare,
+  Brain,
+  Target,
+  TrendingUp,
+  Award,
+  AlertCircle,
+  Download,
+  ArrowLeft,
+  Star,
+  CheckCircle2,
+  XCircle,
+  Activity,
+  BarChart3,
+  PieChart,
+  TrendingUp as LineChartIcon,
+} from "lucide-react";
+import { useParams } from "next/navigation";
+import { getAnalyticsData } from "@/actions/checkpointer";
 
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  LineElement,
-  PointElement,
-  RadarController,
-  RadialLinearScale,
-  Title,
-  Tooltip,
-  Legend
-);
-
-// Dynamically import chart components to avoid SSR
-const Bar = dynamic(() => import('react-chartjs-2').then((mod) => mod.Bar), { ssr: false });
-const Pie = dynamic(() => import('react-chartjs-2').then((mod) => mod.Pie), { ssr: false });
-const Line = dynamic(() => import('react-chartjs-2').then((mod) => mod.Line), { ssr: false });
-const Radar = dynamic(() => import('react-chartjs-2').then((mod) => mod.Radar), { ssr: false });
-
-interface AnalyticsData {
-  'Overall Performance Metrics': {
-    'Average confidence score': number;
-    'Communication fluency score': number;
-    'Technical accuracy score': number;
-    'Overall interview performance': number;
-  };
-  'Behavioral Analysis': {
-    'Response consistency': string;
-    'Problem-solving approach': string;
-    'Stress handling capability': string;
-    'Professional demeanor': string;
-  };
-  'Technical Assessment': {
-    'Knowledge depth in relevant areas': string;
-    'Practical application understanding': string;
-    'Learning agility indicators': string;
-  };
-  'Communication Skills': {
-    'Clarity of expression': string;
-    'Grammar and language proficiency': string;
-    'Structured thinking patterns': string;
-    'Question comprehension ability': string;
-  };
-  'Hiring Recommendation': {
-    'Strengths summary': string;
-    'Areas for improvement': string;
-    'Overall fit assessment': string;
-    'Risk factors': string;
-    'Final recommendation': string;
-  };
-  'Interview Quality Metrics': {
-    'Question difficulty distribution': string;
-    'Response time patterns': string;
-    'Interview completion rate': string;
-    'Engagement level': string;
-  };
-  rawData: {
-    totalConversations: number;
-    analysisTimestamp: string;
-    appId: string;
-  };
-  trends: {
-    confidenceTrend: string;
-    accuracyTrend: string;
-    averageConfidence: number;
-    averageAccuracy: number;
-  };
-}
-
-export default function AnalyticsPage() {
-  const params = useParams()
+const AnalyticsPage = () => {
+  // Uncomment and use your actual query
+  const params = useParams();
   const appId = params.appid as string;
-  const { data: analyticsData, isLoading, error } = useQuery<AnalyticsData>({
-    queryKey: ['analytics', appId],
-    queryFn: () => getConversationAnalytics(appId),
-    enabled: !!appId,
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["analytics", appId],
+    queryFn: async () => getAnalyticsData(appId),
   });
 
-  // const { data: applicationData, isLoading: isApplicationLoading, error: applicationError } = useQuery({
-  //   queryKey: ["application", appId],
-  //   queryFn: async () => getApplicationDetails(appId as string),
-  //   enabled: !!appId,
-  // });
-  // console.log(applicationData,"applicationData");
-
-  // Performance Metrics Chart
-  const performanceChartData = useMemo(() => {
-    if (!analyticsData) return null;
-    const metrics = analyticsData['Overall Performance Metrics'];
-    return {
-      labels: ['Confidence', 'Fluency', 'Accuracy', 'Overall'],
-      datasets: [
-        {
-          label: 'Performance Scores',
-          data: [
-            metrics['Average confidence score'],
-            metrics['Communication fluency score'],
-            metrics['Technical accuracy score'],
-            metrics['Overall interview performance'],
-          ],
-          backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
-          borderColor: ['#1e40af', '#047857', '#b45309', '#b91c1c'],
-          borderWidth: 1,
-        },
-      ],
-    };
-  }, [analyticsData]);
-
-  // Question Difficulty Distribution Chart
-  const difficultyChartData = useMemo(() => {
-    if (!analyticsData) return null;
-    const difficulty = analyticsData['Interview Quality Metrics']['Question difficulty distribution'];
-    return {
-      labels: ['Easy', 'Medium', 'Hard'],
-      datasets: [
-        {
-          data: difficulty === 'Easy' ? [100, 0, 0] : difficulty === 'Medium' ? [0, 100, 0] : [0, 0, 100],
-          backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-          borderColor: ['#047857', '#b45309', '#b91c1c'],
-          borderWidth: 1,
-        },
-      ],
-    };
-  }, [analyticsData]);
-
-  // Behavioral Analysis Radar Chart
-  const behavioralChartData = useMemo(() => {
-    if (!analyticsData) return null;
-    const behavioral = analyticsData['Behavioral Analysis'];
-    const scoreMap: { [key: string]: number } = {
-      Inconsistent: 1,
-      Consistent: 3,
-      'Not demonstrated': 0,
-      Demonstrated: 3,
-      Poor: 1,
-      Good: 3,
-      Unprofessional: 1,
-      Professional: 3,
-    };
-    return {
-      labels: ['Response Consistency', 'Problem Solving', 'Stress Handling', 'Professional Demeanor'],
-      datasets: [
-        {
-          label: 'Behavioral Analysis',
-          data: [
-            scoreMap[behavioral['Response consistency']] || 0,
-            scoreMap[behavioral['Problem-solving approach']] || 0,
-            scoreMap[behavioral['Stress handling capability']] || 0,
-            scoreMap[behavioral['Professional demeanor']] || 0,
-          ],
-          backgroundColor: 'rgba(59, 130, 246, 0.2)',
-          borderColor: '#3b82f6',
-          pointBackgroundColor: '#3b82f6',
-          borderWidth: 2,
-        },
-      ],
-    };
-  }, [analyticsData]);
-
-  // Communication Skills Bar Chart
-  const communicationChartData = useMemo(() => {
-    if (!analyticsData) return null;
-    const communication = analyticsData['Communication Skills'];
-    const scoreMap: { [key: string]: number } = {
-      Unclear: 1,
-      Clear: 3,
-      'Not assessed': 0,
-      Assessed: 3,
-      'Not demonstrated': 0,
-      Demonstrated: 3,
-      Poor: 1,
-      Good: 3,
-    };
-    return {
-      labels: ['Clarity', 'Grammar', 'Structured Thinking', 'Question Comprehension'],
-      datasets: [
-        {
-          label: 'Communication Scores',
-          data: [
-            scoreMap[communication['Clarity of expression']] || 0,
-            scoreMap[communication['Grammar and language proficiency']] || 0,
-            scoreMap[communication['Structured thinking patterns']] || 0,
-            scoreMap[communication['Question comprehension ability']] || 0,
-          ],
-          backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
-          borderColor: ['#1e40af', '#047857', '#b45309', '#b91c1c'],
-          borderWidth: 1,
-        },
-      ],
-    };
-  }, [analyticsData]);
-
-  // Technical Assessment Bar Chart
-  const technicalChartData = useMemo(() => {
-    if (!analyticsData) return null;
-    const technical = analyticsData['Technical Assessment'];
-    const scoreMap: { [key: string]: number } = {
-      'Not assessed': 0,
-      Assessed: 3,
-    };
-    return {
-      labels: ['Knowledge Depth', 'Practical Application', 'Learning Agility'],
-      datasets: [
-        {
-          label: 'Technical Scores',
-          data: [
-            scoreMap[technical['Knowledge depth in relevant areas']] || 0,
-            scoreMap[technical['Practical application understanding']] || 0,
-            scoreMap[technical['Learning agility indicators']] || 0,
-          ],
-          backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-          borderColor: ['#1e40af', '#047857', '#b45309'],
-          borderWidth: 1,
-        },
-      ],
-    };
-  }, [analyticsData]);
-
-  // Trends Line Chart
-  const trendsChartData = useMemo(() => {
-    if (!analyticsData) return null;
-    return {
-      labels: ['Current'],
-      datasets: [
-        {
-          label: 'Confidence',
-          data: [analyticsData.trends.averageConfidence],
-          borderColor: '#3b82f6',
-          backgroundColor: '#3b82f6',
-          fill: false,
-          tension: 0.4,
-        },
-        {
-          label: 'Accuracy',
-          data: [analyticsData.trends.averageAccuracy],
-          borderColor: '#10b981',
-          backgroundColor: '#10b981',
-          fill: false,
-          tension: 0.4,
-        },
-      ],
-    };
-  }, [analyticsData]);
-
-  // Insights Generator
-  const insights = useMemo(() => {
-    if (!analyticsData) return [];
-    const metrics = analyticsData['Overall Performance Metrics'];
-    const hiring = analyticsData['Hiring Recommendation'];
-    const quality = analyticsData['Interview Quality Metrics'];
-    const behavioral = analyticsData['Behavioral Analysis'];
-    return [
-      {
-        title: 'Performance Overview',
-        description: `The candidate's overall performance score is ${metrics['Overall interview performance']}%, indicating significant room for improvement.`,
-        type: metrics['Overall interview performance'] > 50 ? 'positive' : 'negative',
-      },
-      {
-        title: 'Hiring Fit',
-        description: `The final recommendation is "${hiring['Final recommendation']}" with risk factors: "${hiring['Risk factors']}".`,
-        type: hiring['Final recommendation'].includes('No') ? 'negative' : 'positive',
-      },
-      {
-        title: 'Engagement Insight',
-        description: `Engagement level is ${quality['Engagement level'].toLowerCase()} with a ${quality['Interview completion rate']} completion rate, suggesting low candidate involvement.`,
-        type: quality['Engagement level'] === 'Low' ? 'negative' : 'positive',
-      },
-      {
-        title: 'Behavioral Concern',
-        description: `Behavioral analysis shows "${behavioral['Professional demeanor']}" demeanor and "${behavioral['Stress handling capability']}" stress handling, critical areas for improvement.`,
-        type: behavioral['Professional demeanor'] === 'Unprofessional' ? 'negative' : 'positive',
-      },
-    ];
-  }, [analyticsData]);
+  console.log(data);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-50 to-gray-200">
-        <div className="text-2xl font-semibold text-gray-700 animate-pulse">Loading Analytics...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-screen flex flex-col items-center justify-center">
+            <span className="analyLoader"></span>
+            <h2 className="text-2xl">Loading interview analytics...</h2>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !data?.data) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-50 to-gray-200">
-        <div className="text-2xl font-semibold text-red-600">Error Loading Analytics</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-96">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Analysis Failed</h3>
+              <p className="text-gray-600">
+                Unable to load interview analytics data.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (!analyticsData) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-50 to-gray-200">
-        <div className="text-2xl font-semibold text-gray-700">No Analytics Data Available</div>
-      </div>
+  const analytics = data.data.analyticsData;
+  console.log(data.data.conversationsData);
+  // Prepare chart data
+  const radarData = [
+    {
+      subject: "Communication",
+      score: analytics.radarChartData.communicationClarity,
+    },
+    {
+      subject: "Technical Knowledge",
+      score: analytics.radarChartData.technicalKnowledge,
+    },
+    { subject: "Relevance", score: analytics.radarChartData.responseRelevance },
+    {
+      subject: "Vocabulary",
+      score: analytics.radarChartData.professionalVocabulary,
+    },
+    {
+      subject: "Problem Solving",
+      score: analytics.radarChartData.problemSolvingApproach,
+    },
+  ];
+
+  const questionData = Object.entries(analytics.questionPerformance).map(
+    ([question, score]) => ({
+      question,
+      score,
+    })
+  );
+
+  const detailedMetricsData = Object.entries(analytics.detailedMetrics).map(
+    ([metric, score]) => ({
+      metric: metric
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (str) => str.toUpperCase()),
+      score,
+    })
+  );
+
+  const performanceTimeData =
+    analytics.performanceOverTime.technicalAccuracy.map(
+      (_: any, index: any) => ({
+        question: `Q${index + 1}`,
+        technical: analytics.performanceOverTime.technicalAccuracy[index],
+        communication:
+          analytics.performanceOverTime.communicationClarity[index],
+        relevance: analytics.performanceOverTime.responseRelevance[index],
+        vocabulary: analytics.performanceOverTime.professionalVocabulary[index],
+      })
     );
-  }
+
+  const getScoreColor = (score: any) => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  const getProgressColor = (score: any) => {
+    if (score >= 80) return "bg-green-500";
+    if (score >= 60) return "bg-yellow-500";
+    return "bg-red-500";
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-gray-800 mb-8">Analytics Dashboard</h1>
-
-        {/* Key Insights */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-4">Key Insights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {insights.map((insight, index) => (
-              <div
-                key={index}
-                className={`p-6 rounded-xl shadow-lg ${
-                  insight.type === 'positive' ? 'bg-green-50' : 'bg-red-50'
-                } transition-transform hover:scale-105`}
-              >
-                <h3 className="text-lg font-semibold text-gray-800">{insight.title}</h3>
-                <p className="text-gray-600 mt-2">{insight.description}</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Interviews
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  Interview Analytics
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Comprehensive performance analysis
+                </p>
               </div>
-            ))}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Export Report
+              </Button>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Overview and Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Overview Card */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Overview</h2>
-            <div className="space-y-3 text-gray-600">
-              <p>
-                <span className="font-medium">Total Conversations:</span>{' '}
-                {analyticsData.rawData.totalConversations}
-              </p>
-              <p>
-                <span className="font-medium">Analysis Timestamp:</span>{' '}
-                {new Date(analyticsData.rawData.analysisTimestamp).toLocaleString()}
-              </p>
-              <p>
-                <span className="font-medium">App ID:</span> {analyticsData.rawData.appId}
-              </p>
-            </div>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Score Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Overall Score
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${getScoreColor(
+                      analytics.overallScore
+                    )}`}
+                  >
+                    {analytics.overallScore}%
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Award className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+              <Progress value={analytics.overallScore} className="mt-3" />
+            </CardContent>
+          </Card>
 
-          {/* Performance Metrics Bar Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Performance Metrics</h2>
-            {performanceChartData ? (
-              <Bar
-                data={performanceChartData}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: 'Performance Scores', font: { size: 16 } },
-                  },
-                  scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: 'Score (%)' } } },
-                }}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Communication
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${getScoreColor(
+                      analytics.communicationScore
+                    )}`}
+                  >
+                    {analytics.communicationScore}%
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+              <Progress value={analytics.communicationScore} className="mt-3" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Technical Knowledge
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${getScoreColor(
+                      analytics.technicalKnowledgeScore
+                    )}`}
+                  >
+                    {analytics.technicalKnowledgeScore}%
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Brain className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+              <Progress
+                value={analytics.technicalKnowledgeScore}
+                className="mt-3"
               />
-            ) : (
-              <div className="text-gray-600">Loading chart...</div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Question Difficulty Pie Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Question Difficulty</h2>
-            {difficultyChartData ? (
-              <Pie
-                data={difficultyChartData}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { position: 'bottom' },
-                    title: { display: true, text: 'Difficulty Distribution', font: { size: 16 } },
-                  },
-                }}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Problem Solving
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${getScoreColor(
+                      analytics.problemSolvingScore
+                    )}`}
+                  >
+                    {analytics.problemSolvingScore}%
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <Target className="w-6 h-6 text-orange-600" />
+                </div>
+              </div>
+              <Progress
+                value={analytics.problemSolvingScore}
+                className="mt-3"
               />
-            ) : (
-              <div className="text-gray-600">Loading chart...</div>
-            )}
-          </div>
-
-          {/* Behavioral Analysis Radar Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Behavioral Analysis</h2>
-            {behavioralChartData ? (
-              <Radar
-                data={behavioralChartData}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { position: 'bottom' },
-                    title: { display: true, text: 'Behavioral Scores', font: { size: 16 } },
-                  },
-                  scales: {
-                    r: { beginAtZero: true, max: 3, ticks: { stepSize: 1 } },
-                  },
-                }}
-              />
-            ) : (
-              <div className="text-gray-600">Loading chart...</div>
-            )}
-          </div>
-
-          {/* Communication Skills Bar Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Communication Skills</h2>
-            {communicationChartData ? (
-              <Bar
-                data={communicationChartData}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: 'Communication Scores', font: { size: 16 } },
-                  },
-                  scales: { y: { beginAtZero: true, max: 3, ticks: { stepSize: 1 } } },
-                }}
-              />
-            ) : (
-              <div className="text-gray-600">Loading chart...</div>
-            )}
-          </div>
-
-          {/* Technical Assessment Bar Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Technical Assessment</h2>
-            {technicalChartData ? (
-              <Bar
-                data={technicalChartData}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: 'Technical Scores', font: { size: 16 } },
-                  },
-                  scales: { y: { beginAtZero: true, max: 3, ticks: { stepSize: 1 } } },
-                }}
-              />
-            ) : (
-              <div className="text-gray-600">Loading chart...</div>
-            )}
-          </div>
-
-          {/* Trends Line Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Performance Trends</h2>
-            {trendsChartData ? (
-              <Line
-                data={trendsChartData}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { position: 'bottom' },
-                    title: { display: true, text: 'Performance Trends', font: { size: 16 } },
-                  },
-                  scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: 'Score (%)' } } },
-                }}
-              />
-            ) : (
-              <div className="text-gray-600">Loading chart...</div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Non-Graphical Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Hiring Recommendation */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Hiring Recommendation</h2>
-            <div className="space-y-3 text-gray-600">
-              {Object.entries(analyticsData['Hiring Recommendation']).map(([key, value]) => (
-                <p key={key}>
-                  <span className="font-medium">{key.replace(/([A-Z])/g, ' $1').trim()}:</span> {value}
-                </p>
-              ))}
-            </div>
-          </div>
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Radar Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <PieChart className="w-5 h-5 mr-2" />
+                Performance Overview
+              </CardTitle>
+              <CardDescription>
+                Multi-dimensional performance analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <RadarChart data={radarData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="subject" />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                  <Radar
+                    name="Score"
+                    dataKey="score"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.1}
+                    strokeWidth={2}
+                  />
+                  <Tooltip />
+                </RadarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-          {/* Interview Quality Metrics */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">Interview Quality Metrics</h2>
-            <div className="space-y-3 text-gray-600">
-              {Object.entries(analyticsData['Interview Quality Metrics']).map(([key, value]) => (
-                <p key={key}>
-                  <span className="font-medium">{key.replace(/([A-Z])/g, ' $1').trim()}:</span> {value}
+          {/* Question Performance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2" />
+                Question Performance
+              </CardTitle>
+              <CardDescription>
+                Individual question scores breakdown
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={questionData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="question" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Bar dataKey="score" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detailed Metrics & Performance Over Time */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Detailed Metrics */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Activity className="w-5 h-5 mr-2" />
+                Detailed Metrics
+              </CardTitle>
+              <CardDescription>
+                Comprehensive skill assessment (0-10 scale)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={detailedMetricsData} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" domain={[0, 10]} />
+                  <YAxis dataKey="metric" type="category" width={140} />
+                  <Tooltip />
+                  <Bar dataKey="score" fill="#10b981" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Performance Over Time */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <LineChartIcon className="w-5 h-5 mr-2" />
+                Performance Progression
+              </CardTitle>
+              <CardDescription>
+                Score evolution throughout the interview
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={performanceTimeData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="question" />
+                  <YAxis domain={[0, 10]} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="technical"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="communication"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="relevance"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="vocabulary"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Keywords & Feedback Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Keywords */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Keywords Detected</CardTitle>
+              <CardDescription>
+                Technical and professional terms used
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {analytics.keywordsDetected.map((keyword: any, index: any) => (
+                  <Badge key={index} variant="secondary">
+                    {keyword}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Strengths */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-green-700">
+                <CheckCircle2 className="w-5 h-5 mr-2" />
+                Strengths
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {analytics.strengths.map((strength: any, index: any) => (
+                  <li key={index} className="flex items-start space-x-2">
+                    <Star className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-gray-700">{strength}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Areas for Improvement */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-orange-700">
+                <AlertCircle className="w-5 h-5 mr-2" />
+                Areas for Improvement
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {analytics.areasForImprovement.map((area: any, index: any) => (
+                  <li key={index} className="flex items-start space-x-2">
+                    <TrendingUp className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-gray-700">{area}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* HR Insights & AI Notes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* HR Insights */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <User className="w-5 h-5 mr-2" />
+                HR Insights
+              </CardTitle>
+              <CardDescription>
+                Professional assessment for hiring decisions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Technical Competency
                 </p>
-              ))}
-            </div>
-          </div>
+                <p className="text-sm text-gray-900">
+                  {analytics.hrInsights.technicalCompetencyLevel}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Experience Level
+                </p>
+                <p className="text-sm text-gray-900">
+                  {analytics.hrInsights.experienceLevelEstimation}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Cultural Fit
+                </p>
+                <p className="text-sm text-gray-900">
+                  {analytics.hrInsights.culturalFitIndicators}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Learning Potential
+                </p>
+                <p className="text-sm text-gray-900">
+                  {analytics.hrInsights.learningPotentialAssessment}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Interview Readiness
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Progress
+                    value={analytics.hrInsights.interviewReadinessScore}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium">
+                    {analytics.hrInsights.interviewReadinessScore}%
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Interviewer Notes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Brain className="w-5 h-5 mr-2" />
+                AI Interviewer Notes
+              </CardTitle>
+              <CardDescription>Comprehensive analysis summary</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {analytics.aiInterviewerNotes}
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default AnalyticsPage;
