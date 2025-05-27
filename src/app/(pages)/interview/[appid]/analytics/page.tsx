@@ -1,39 +1,45 @@
-'use client'
-import React from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Progress } from '@/components/ui/progress'
-import { 
-  RadarChart, 
-  Radar, 
+"use client";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import {
+  RadarChart,
+  Radar,
   RadialBar,
   RadialBarChart,
-  BarChart, 
-  Bar, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  Cell
-} from 'recharts'
-import { 
-  User, 
-  MessageSquare, 
-  Brain, 
-  Target, 
-  TrendingUp, 
-  Award, 
-  AlertCircle, 
+  Cell,
+} from "recharts";
+import {
+  User,
+  MessageSquare,
+  Brain,
+  Target,
+  TrendingUp,
+  Award,
+  AlertCircle,
   Download,
   ArrowLeft,
   Star,
@@ -42,33 +48,33 @@ import {
   Activity,
   BarChart3,
   PieChart,
-  TrendingUp as LineChartIcon
-} from 'lucide-react'
-import { useParams } from 'next/navigation'
-import { getAnalyticsData } from '@/actions/checkpointer'
-
+  TrendingUp as LineChartIcon,
+} from "lucide-react";
+import { useParams } from "next/navigation";
+import { getAnalyticsData } from "@/actions/checkpointer";
 
 const AnalyticsPage = () => {
   // Uncomment and use your actual query
-  const params = useParams()
+  const params = useParams();
   const appId = params.appid as string;
-  const {data, isLoading, error} = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["analytics", appId],
-    queryFn: async () => getAnalyticsData(appId)
-  })
+    queryFn: async () => getAnalyticsData(appId),
+  });
 
-  console.log(data)
-
+  console.log(data);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Activity className="w-8 h-8 animate-spin mx-auto mb-2" />
-          <p className="text-gray-600">Analyzing interview data...</p>
+          <div className="h-screen flex flex-col items-center justify-center">
+            <span className="analyLoader"></span>
+            <h2 className="text-2xl">Loading interview analytics...</h2>
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !data?.data) {
@@ -79,54 +85,78 @@ const AnalyticsPage = () => {
             <div className="text-center">
               <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Analysis Failed</h3>
-              <p className="text-gray-600">Unable to load interview analytics data.</p>
+              <p className="text-gray-600">
+                Unable to load interview analytics data.
+              </p>
             </div>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
-  const analytics = data.data.analyticsData
-console.log(data.data.conversationsData)
+  const analytics = data.data.analyticsData;
+  console.log(data.data.conversationsData);
   // Prepare chart data
   const radarData = [
-    { subject: 'Communication', score: analytics.radarChartData.communicationClarity },
-    { subject: 'Technical Knowledge', score: analytics.radarChartData.technicalKnowledge },
-    { subject: 'Relevance', score: analytics.radarChartData.responseRelevance },
-    { subject: 'Vocabulary', score: analytics.radarChartData.professionalVocabulary },
-    { subject: 'Problem Solving', score: analytics.radarChartData.problemSolvingApproach }
-  ]
+    {
+      subject: "Communication",
+      score: analytics.radarChartData.communicationClarity,
+    },
+    {
+      subject: "Technical Knowledge",
+      score: analytics.radarChartData.technicalKnowledge,
+    },
+    { subject: "Relevance", score: analytics.radarChartData.responseRelevance },
+    {
+      subject: "Vocabulary",
+      score: analytics.radarChartData.professionalVocabulary,
+    },
+    {
+      subject: "Problem Solving",
+      score: analytics.radarChartData.problemSolvingApproach,
+    },
+  ];
 
-  const questionData = Object.entries(analytics.questionPerformance).map(([question, score]) => ({
-    question,
-    score
-  }))
+  const questionData = Object.entries(analytics.questionPerformance).map(
+    ([question, score]) => ({
+      question,
+      score,
+    })
+  );
 
-  const detailedMetricsData = Object.entries(analytics.detailedMetrics).map(([metric, score]) => ({
-    metric: metric.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-    score
-  }))
+  const detailedMetricsData = Object.entries(analytics.detailedMetrics).map(
+    ([metric, score]) => ({
+      metric: metric
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (str) => str.toUpperCase()),
+      score,
+    })
+  );
 
-  const performanceTimeData = analytics.performanceOverTime.technicalAccuracy.map((_, index) => ({
-    question: `Q${index + 1}`,
-    technical: analytics.performanceOverTime.technicalAccuracy[index],
-    communication: analytics.performanceOverTime.communicationClarity[index],
-    relevance: analytics.performanceOverTime.responseRelevance[index],
-    vocabulary: analytics.performanceOverTime.professionalVocabulary[index]
-  }))
+  const performanceTimeData =
+    analytics.performanceOverTime.technicalAccuracy.map(
+      (_: any, index: any) => ({
+        question: `Q${index + 1}`,
+        technical: analytics.performanceOverTime.technicalAccuracy[index],
+        communication:
+          analytics.performanceOverTime.communicationClarity[index],
+        relevance: analytics.performanceOverTime.responseRelevance[index],
+        vocabulary: analytics.performanceOverTime.professionalVocabulary[index],
+      })
+    );
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-600'
-    if (score >= 60) return 'text-yellow-600'
-    return 'text-red-600'
-  }
+  const getScoreColor = (score: any) => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
 
-  const getProgressColor = (score) => {
-    if (score >= 80) return 'bg-green-500'
-    if (score >= 60) return 'bg-yellow-500'
-    return 'bg-red-500'
-  }
+  const getProgressColor = (score: any) => {
+    if (score >= 80) return "bg-green-500";
+    if (score >= 60) return "bg-yellow-500";
+    return "bg-red-500";
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -141,8 +171,12 @@ console.log(data.data.conversationsData)
               </Button>
               <Separator orientation="vertical" className="h-6" />
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Interview Analytics</h1>
-                <p className="text-sm text-gray-500">Comprehensive performance analysis</p>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  Interview Analytics
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Comprehensive performance analysis
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -162,8 +196,14 @@ console.log(data.data.conversationsData)
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Overall Score</p>
-                  <p className={`text-3xl font-bold ${getScoreColor(analytics.overallScore)}`}>
+                  <p className="text-sm font-medium text-gray-600">
+                    Overall Score
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${getScoreColor(
+                      analytics.overallScore
+                    )}`}
+                  >
                     {analytics.overallScore}%
                   </p>
                 </div>
@@ -179,8 +219,14 @@ console.log(data.data.conversationsData)
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Communication</p>
-                  <p className={`text-3xl font-bold ${getScoreColor(analytics.communicationScore)}`}>
+                  <p className="text-sm font-medium text-gray-600">
+                    Communication
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${getScoreColor(
+                      analytics.communicationScore
+                    )}`}
+                  >
                     {analytics.communicationScore}%
                   </p>
                 </div>
@@ -196,8 +242,14 @@ console.log(data.data.conversationsData)
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Technical Knowledge</p>
-                  <p className={`text-3xl font-bold ${getScoreColor(analytics.technicalKnowledgeScore)}`}>
+                  <p className="text-sm font-medium text-gray-600">
+                    Technical Knowledge
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${getScoreColor(
+                      analytics.technicalKnowledgeScore
+                    )}`}
+                  >
                     {analytics.technicalKnowledgeScore}%
                   </p>
                 </div>
@@ -205,7 +257,10 @@ console.log(data.data.conversationsData)
                   <Brain className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
-              <Progress value={analytics.technicalKnowledgeScore} className="mt-3" />
+              <Progress
+                value={analytics.technicalKnowledgeScore}
+                className="mt-3"
+              />
             </CardContent>
           </Card>
 
@@ -213,8 +268,14 @@ console.log(data.data.conversationsData)
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Problem Solving</p>
-                  <p className={`text-3xl font-bold ${getScoreColor(analytics.problemSolvingScore)}`}>
+                  <p className="text-sm font-medium text-gray-600">
+                    Problem Solving
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${getScoreColor(
+                      analytics.problemSolvingScore
+                    )}`}
+                  >
                     {analytics.problemSolvingScore}%
                   </p>
                 </div>
@@ -222,7 +283,10 @@ console.log(data.data.conversationsData)
                   <Target className="w-6 h-6 text-orange-600" />
                 </div>
               </div>
-              <Progress value={analytics.problemSolvingScore} className="mt-3" />
+              <Progress
+                value={analytics.problemSolvingScore}
+                className="mt-3"
+              />
             </CardContent>
           </Card>
         </div>
@@ -330,10 +394,30 @@ console.log(data.data.conversationsData)
                   <YAxis domain={[0, 10]} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="technical" stroke="#3b82f6" strokeWidth={2} />
-                  <Line type="monotone" dataKey="communication" stroke="#10b981" strokeWidth={2} />
-                  <Line type="monotone" dataKey="relevance" stroke="#f59e0b" strokeWidth={2} />
-                  <Line type="monotone" dataKey="vocabulary" stroke="#8b5cf6" strokeWidth={2} />
+                  <Line
+                    type="monotone"
+                    dataKey="technical"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="communication"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="relevance"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="vocabulary"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -352,7 +436,7 @@ console.log(data.data.conversationsData)
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {analytics.keywordsDetected.map((keyword, index) => (
+                {analytics.keywordsDetected.map((keyword: any, index: any) => (
                   <Badge key={index} variant="secondary">
                     {keyword}
                   </Badge>
@@ -371,7 +455,7 @@ console.log(data.data.conversationsData)
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
-                {analytics.strengths.map((strength, index) => (
+                {analytics.strengths.map((strength: any, index: any) => (
                   <li key={index} className="flex items-start space-x-2">
                     <Star className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-gray-700">{strength}</span>
@@ -391,7 +475,7 @@ console.log(data.data.conversationsData)
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
-                {analytics.areasForImprovement.map((area, index) => (
+                {analytics.areasForImprovement.map((area: any, index: any) => (
                   <li key={index} className="flex items-start space-x-2">
                     <TrendingUp className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-gray-700">{area}</span>
@@ -417,26 +501,49 @@ console.log(data.data.conversationsData)
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Technical Competency</p>
-                <p className="text-sm text-gray-900">{analytics.hrInsights.technicalCompetencyLevel}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Technical Competency
+                </p>
+                <p className="text-sm text-gray-900">
+                  {analytics.hrInsights.technicalCompetencyLevel}
+                </p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Experience Level</p>
-                <p className="text-sm text-gray-900">{analytics.hrInsights.experienceLevelEstimation}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Experience Level
+                </p>
+                <p className="text-sm text-gray-900">
+                  {analytics.hrInsights.experienceLevelEstimation}
+                </p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Cultural Fit</p>
-                <p className="text-sm text-gray-900">{analytics.hrInsights.culturalFitIndicators}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Cultural Fit
+                </p>
+                <p className="text-sm text-gray-900">
+                  {analytics.hrInsights.culturalFitIndicators}
+                </p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Learning Potential</p>
-                <p className="text-sm text-gray-900">{analytics.hrInsights.learningPotentialAssessment}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Learning Potential
+                </p>
+                <p className="text-sm text-gray-900">
+                  {analytics.hrInsights.learningPotentialAssessment}
+                </p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Interview Readiness</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Interview Readiness
+                </p>
                 <div className="flex items-center space-x-2">
-                  <Progress value={analytics.hrInsights.interviewReadinessScore} className="flex-1" />
-                  <span className="text-sm font-medium">{analytics.hrInsights.interviewReadinessScore}%</span>
+                  <Progress
+                    value={analytics.hrInsights.interviewReadinessScore}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium">
+                    {analytics.hrInsights.interviewReadinessScore}%
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -449,9 +556,7 @@ console.log(data.data.conversationsData)
                 <Brain className="w-5 h-5 mr-2" />
                 AI Interviewer Notes
               </CardTitle>
-              <CardDescription>
-                Comprehensive analysis summary
-              </CardDescription>
+              <CardDescription>Comprehensive analysis summary</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-700 leading-relaxed">
@@ -462,7 +567,7 @@ console.log(data.data.conversationsData)
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AnalyticsPage
+export default AnalyticsPage;

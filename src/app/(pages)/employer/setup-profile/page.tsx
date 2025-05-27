@@ -65,6 +65,7 @@ const EditProfileForm = () => {
   };
   const [formValues, setFormValues] = useState(initialValues);
   const [logo, setLogo] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -89,6 +90,7 @@ const EditProfileForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       if (!logo) {
         toast.error("Please upload an image file");
@@ -129,6 +131,9 @@ const EditProfileForm = () => {
       }
     } catch (error) {
       console.error("Error updating company details:", error);
+      toast.error("Failed to update company details");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -379,7 +384,16 @@ const EditProfileForm = () => {
               <Button type="button" variant="outline">
                 Cancel
               </Button>
-              <Button type="submit">Save Details</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <span className="mr-2">Saving...</span>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  </>
+                ) : (
+                  "Save Details"
+                )}
+              </Button>
             </div>
           </div>
         </form>

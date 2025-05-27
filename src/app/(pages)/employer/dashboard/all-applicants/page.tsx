@@ -8,6 +8,7 @@ import { getJobResponses, updateHiringStatus } from '@/lib/api-functions/employe
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import WbLoader from '@/components/global-cmp/wbLoader';
+import { toast } from 'sonner';
 
 type HiringStatus = 'PENDING' | 'HIRED' | 'REJECTED';
 
@@ -25,7 +26,8 @@ const JobResponsePage = () => {
     mutationFn: ({ applicationId, status }: { applicationId: string; status: HiringStatus }) =>
       updateHiringStatus(applicationId, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobResponses'] });
+      toast.success('Status updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['jobResponses','employerAnalytics'] });
     },
   });
 
@@ -64,13 +66,6 @@ const JobResponsePage = () => {
 
   const tableData = responseData?.data ? formatData(responseData.data) : [];
 
-  if (isLoading) {
-    return <WbLoader />;
-  }
-
-  if (!responseData?.data?.length) {
-    return <div className="flex items-center justify-center h-96">No job responses found</div>;
-  }
 
   return (
     <div className="mt-5">
@@ -95,7 +90,9 @@ const JobResponsePage = () => {
             PRIMARY: "var(--background)",
             SECONDARY: "#F5F7F6",
           }}
-          data={tableData}
+          noDataMessage={isLoading ? <WbLoader /> : "No job applicants found"}
+          data={tableData || []}
+          
         />
       </div>
     </div>

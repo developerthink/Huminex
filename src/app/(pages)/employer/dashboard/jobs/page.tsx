@@ -2,7 +2,7 @@
 import React from "react";
 import TableNex from "react-tablenex";
 import "react-tablenex/style.css";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -10,12 +10,24 @@ import {
 } from "@/components/ui/popover";
 import { MoreHorizontal, Pencil, Trash } from "lucide-react";
 import CreateJob from "@/components/employer-cmp/create-job";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import axios from "axios";
 import { JobType } from "@/types/models/job";
 import { toast } from "sonner";
 import Link from 'next/link';
 import WbLoader from "@/components/global-cmp/wbLoader";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MdErrorOutline } from 'react-icons/md';
+
+const fetchJobs = async () => {
+  const response = await axios.get('/api/employer/jobs');
+  return response.data.data;
+};
+
+const deleteJob = async (jobId: string) => {
+  const response = await axios.delete(`/api/job/${jobId}`);
+  return response.data;
+};
 
 const page = () => {
   interface TableJobType {
@@ -32,145 +44,38 @@ const page = () => {
     actions: React.ReactNode;
   }
 
+  const queryClient = useQueryClient();
   const [tableData, setTableData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleEdit = (job: JobType) => {
-    console.log("job on edit", job)
-    setEditingJobId(job._id);
-  };
+  const { data: jobs, isLoading, error } = useQuery({
+    queryKey: ['emp-jobs'],
+    queryFn: fetchJobs
+  });
 
-  const handleDelete = async (jobId: string) => {
-    setDeleteJobId(jobId);
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteJobId) return;
-    setIsDeleting(true);
-    try {
-      const response = await axios.delete(`/api/job/${deleteJobId}`);
-      if (response.data.error) {
-        toast.error(response.data.error);
+  const deleteMutation = useMutation({
+    mutationFn: deleteJob,
+    onSuccess: (data) => {
+      if (data.error) {
+        toast.error(data.error);
         return;
       }
       toast.success('Job deleted successfully');
-      window.location.reload();
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
+      setDeleteJobId(null);
+    },
+    onError: (error: any) => {
       console.error('Error deleting job:', error);
       toast.error('Failed to delete job');
-    } finally {
-      setIsDeleting(false);
       setDeleteJobId(null);
     }
-  };
+  });
 
-  const customColumns = [
-    { accessor: "id", header: "Job ID" },
-    {
-      accessor: "jobTitle",
-      header: (
-        <div className="flex items-center gap-1">
-          Job Title
-        </div>
-      ),
-      render: (_: any, row: any) => (
-        <h3 className="font-semibold text-nowrap text-[17px]">{row.jobTitle}</h3>
-      ),
-    },
-    { accessor: "jobType", header: "Job Type" },
-    {
-      accessor: "location",
-      header: (
-        <div className="flex items-center gap-1">
-          Location
-        </div>
-      ),
-    },
-    { accessor: "ctcRange", header: "CTC Range",
-        render: (_: any, row: any) => (
-          <h3 className="text-nowrap italic">{row.ctcRange}</h3>
-        ),
-    },
-    { accessor: "workExperience", header: "Work Exp",
-      render: (_: any, row: any) => (
-        <h3>{row.workExperience} yrs</h3>
-      ),
-    },
-    { accessor: "interviewDuration", header: "Duration",
-        render: (_: any, row: any) => (
-          <h3>{row.interviewDuration} min</h3>
-        ),
-    },
-    { accessor: "difficultyLevel", header: "Difficulty Level",
-        render: (_: any, row: any) => (
-          <h3 className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${row.difficultyLevel === "easy" ? "text-green-500 bg-green-500/30" : row.difficultyLevel === "medium" ? "bg-yellow-500/30 text-yellow-500" : "bg-red-500/30 text-red-500"}`}>{row.difficultyLevel}</h3>
-        ),
-    },
-    { accessor: "techStack", header: "Tech Stack",
-        render: (_: any, row: any) => (
-          <h3 className="text-nowrap truncate hover:w-auto hover:text-wrap w-[100px]">{row.techStack.join(", ")}</h3>
-        ),
-    },
-    { 
-      accessor: "actions", 
-      header: "Actions",
-      render: (_: any, row: any) => (
-        <div className="flex items-center justify-center">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="p-2 hover:bg-gray-100 rounded-full">
-                <MoreHorizontal className="h-5 w-5 text-gray-500" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-40 p-2">
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => handleEdit(row)}
-                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(row.id)}
-                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm text-red-600"
-                >
-                  <Trash className="h-4 w-4" />
-                  Delete
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <CreateJob 
-            jobToEdit={row} 
-            isEditing={true} 
-            open={editingJobId === row.id}
-            onOpenChange={(open) => !open && setEditingJobId(null)}
-            onSubmit={() => {
-              setEditingJobId(null);
-              window.location.reload();
-            }}
-          />
-        </div>
-      ),
-    },
-  ];
-
-  const fetchJobs = async () => {
-    try {
-      const response = await axios.get('/api/employer/jobs');
-      if (response.data.error) {
-        setError(response.data.error || 'Failed to fetch jobs');
-        setLoading(false);
-        return;
-      }
-      const jobs = response.data.data;
-      const tableData = jobs.map((job:any) => ({
+  React.useEffect(() => {
+    if (jobs) {
+      const tableData = jobs.map((job: any) => ({
         id: job._id,
         jobTitle: <Link href={`/employer/dashboard/jobs/applications/${job._id}`} className="text-primary hover:underline">{job.title}</Link>,
         jobType: job.jobType,
@@ -215,7 +120,6 @@ const page = () => {
               onOpenChange={(open) => !open && setEditingJobId(null)}
               onSubmit={() => {
                 setEditingJobId(null);
-                window.location.reload();
               }}
             />
           </div>
@@ -223,16 +127,109 @@ const page = () => {
         ...job
       }));
       setTableData(tableData);
-      setLoading(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch jobs');
-      setLoading(false);
     }
+  }, [jobs]);
+
+  const handleEdit = (job: JobType) => {
+    console.log("job on edit", job);
+    setEditingJobId(job._id);
   };
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
+  const handleDelete = (jobId: string) => {
+    setDeleteJobId(jobId);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteJobId) return;
+    deleteMutation.mutate(deleteJobId);
+  };
+
+  const customColumns = [
+    { accessor: "id", header: "Job ID" },
+    {
+      accessor: "jobTitle",
+      header: (
+        <div className="flex items-center gap-1">
+          Job Title
+        </div>
+      ),
+      render: (_: any, row: any) => (
+        <h3 className="font-semibold text-nowrap text-[17px]">{row.jobTitle}</h3>
+      ),
+    },
+    { accessor: "jobType", header: "Job Type" },
+    {
+      accessor: "location",
+      header: (
+        <div className="flex items-center gap-1">
+          Location
+        </div>
+      ),
+    },
+    { accessor: "ctcRange", header: "CTC Range",
+        render: (_: any, row: any) => (
+          <h3 className="text-nowrap italic">{row.ctcRange}</h3>
+        ),
+    },
+    { accessor: "workExperience", header: "Work Exp",
+      render: (_: any, row: any) => (
+        <h3>{row.workExperience} yrs</h3>
+      ),
+    },
+    { accessor: "interviewDuration", header: "Duration",
+        render: (_: any, row: any) => (
+          <h3>{row.interviewDuration} min</h3>
+        ),
+    },
+    { accessor: "difficultyLevel", header: "Difficulty Level",
+        render: (_: any, row: any) => (
+          <h3 className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${row.difficultyLevel === "easy" ? "text-green-500 bg-green-500/30" : row.difficultyLevel === "medium" ? "bg-yellow-500/30 text-yellow-500" : "bg-red-500/30 text-red-500"}`}>{row.difficultyLevel}</h3>
+        ),
+    },
+    { 
+      accessor: "actions", 
+      header: "Actions",
+      render: (_: any, row: any) => (
+        <div className="flex items-center justify-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 hover:bg-gray-100 rounded-full">
+                <MoreHorizontal className="h-5 w-5 text-gray-500" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-2">
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => handleEdit(row)}
+                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(row.id)}
+                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm text-red-600"
+                >
+                  <Trash className="h-4 w-4" />
+                  Delete
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <CreateJob 
+            jobToEdit={row} 
+            isEditing={true} 
+            open={editingJobId === row.id}
+            onOpenChange={(open) => !open && setEditingJobId(null)}
+            onSubmit={() => {
+              setEditingJobId(null);
+              queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
+            }}
+          />
+        </div>
+      ),
+    },
+  ];
 
   const handleInviteCandidate = (jobId: string) => {
     console.log(`Inviting candidate for job ${jobId}`);
@@ -248,8 +245,17 @@ const page = () => {
     setActiveMenu(activeMenu === jobId ? null : jobId);
   };
 
-  if (loading) {
-    return <WbLoader />;
+  // if (isLoading) {
+  //   return <WbLoader />;
+  // }
+
+  if (error) {
+    return (
+      <div className="gap-2 p-8 grid place-items-baseline w-full">
+        <h1 className="text-2xl font-bold">All Jobs</h1>
+        <p className="text-sm text-red-500 flex flex-col gap-2"><MdErrorOutline className='w-8 h-8' />{error?.message || 'Error loading jobs'}</p>
+      </div>
+    );
   }
 
   return (
@@ -260,7 +266,7 @@ const page = () => {
       </div>
       <br />
       <TableNex
-      columns={customColumns}
+        columns={customColumns}
         styles={{
           spacing: "lg",
           rounded: "lg",
@@ -275,7 +281,8 @@ const page = () => {
           PRIMARY: "var(--background)",
           SECONDARY: "#F5F7F6",
         }}
-        data={tableData}
+        noDataMessage={isLoading ? <WbLoader /> : "No jobs found"}
+        data={tableData || []}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -296,10 +303,10 @@ const page = () => {
             </button>
             <button
               onClick={confirmDelete}
-              disabled={isDeleting}
+              disabled={deleteMutation.isPending}
               className="ml-3 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {isDeleting ? (
+              {deleteMutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Deleting...

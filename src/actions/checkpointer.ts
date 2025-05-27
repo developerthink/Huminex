@@ -36,9 +36,8 @@ export async function createConversation({
       candidateResponse: candidateResponse,
     });
 
-    console.log(parsedResponse);
     if (parsedResponse.isEnded) {
-      await Application.findByIdAndUpdate("683433e47fc08198d18478ec", {
+      await Application.findByIdAndUpdate(appId, {
         interviewstatus: "COMPLETED",
       });
     }
@@ -81,7 +80,7 @@ export const getApplicationDetails = async (appId: string) => {
 // Helper function to safely parse JSON strings
 const safeJsonParse = (jsonString: string): any => {
   try {
-    return JSON.parse(jsonString);
+    return jsonString;
   } catch (error) {
     console.error("Error parsing JSON:", error);
     console.error("Original string:", jsonString);
@@ -277,7 +276,6 @@ export const fetchAllConversations = async (appId: string) => {
       appId: appId,
     });
     const serializeData = JSON.parse(JSON.stringify(conversations));
-    clg
     return {
       data: serializeData,
       error: null,
@@ -301,8 +299,6 @@ export const getAnalyticsData = async (appId: string) => {
 
     // Step 2: Format the conversation into a proper dialogue
     let formattedConversation = [];
-    let questionCounter = 1;
-
     for (let i = 0; i < conversations.length; i++) {
       const entry = conversations[i];
       
@@ -314,46 +310,43 @@ export const getAnalyticsData = async (appId: string) => {
       const candidateData = safeJsonParse(entry.candidateResponse);
       const candidateResponse = candidateData?.candidateResponse || "";
 
-      // Add interviewer response with question number
-      if (interviewerResponse) {
-        formattedConversation.push({
-          speaker: "Interviewer",
-          message: interviewerResponse,
-          questionNumber: `Q${questionCounter}`
-        });
-        questionCounter++;
-      }
+      // Add interviewer response (interviewer speaks first)
+      formattedConversation.push({
+        speaker: "Interviewer",
+        message: interviewerResponse,
+        questionNumber: `Q${i + 1}` // Label questions as Q1, Q2, etc.
+      });
 
-      // Add candidate response if it exists, without question number
+      // Add candidate response if it exists
       if (candidateResponse) {
         formattedConversation.push({
           speaker: "Candidate",
-          message: candidateResponse
+          message: candidateResponse,
         });
       }
     }
 
     // Step 3: Send the formatted conversation to chatOpenAI for analytics
-    const analyticsResponse = await chatOpenAI(formattedConversation);
+    const analyticsResponse = await chatOpenAI(conversations);
 
     // Step 4: Parse the response and return the analytics data
     let analyticsData;
     try {
-      analyticsData = JSON.parse(analyticsResponse.choices[0].message.content);
+      analyticsData = JSON.parse(analyticsResponse.choices[0].message.content || "{}");
     } catch (error) {
       console.error("Error parsing analytics response:", error);
       throw new Error("Invalid JSON response from AI: " + analyticsResponse.choices[0].message.content);
     }
 
     return {
-      data: { analyticsData, conversationsData: formattedConversation },
+      data: {analyticsData, conversationsData:formattedConversation},
       error: null,
     };
   } catch (error) {
     console.error("Error in getAnalyticsData:", error);
     return {
       data: null,
-      error: error.message || "Error generating analytics data",
+      error: "Error generating analytics data",
     };
   }
 };

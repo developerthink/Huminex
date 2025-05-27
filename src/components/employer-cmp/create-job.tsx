@@ -50,6 +50,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { createJob } from "@/actions/action";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const steps = [
   {
@@ -117,6 +118,7 @@ interface JobPostingWizardProps {
 const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open, onOpenChange }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const queryClient = useQueryClient();
   const getInitialValues = (job?: JobType): JobFormValues => {
     if (job) {
       return {
@@ -336,6 +338,8 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
         toast.error(response.data.error);
         return;
       }
+
+      await queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
 
       toast.success(isEditing ? 'Job updated successfully' : 'Job created successfully');
       router.push('/employer/dashboard/jobs');

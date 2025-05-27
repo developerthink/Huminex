@@ -63,12 +63,15 @@ const AgentModel = () => {
   const [isNearEnd, setIsNearEnd] = useState(false);
   const [remainingTime, setRemainingTime] = useState(duration); // Remaining time in milliseconds
 
-  const { data: applicationData, isLoading: isApplicationLoading, error: applicationError } =
-    useQuery({
-      queryKey: ["application", appid],
-      queryFn: async () => getApplicationDetails(appid as string),
-      enabled: !!appid,
-    });
+  const {
+    data: applicationData,
+    isLoading: isApplicationLoading,
+    error: applicationError,
+  } = useQuery({
+    queryKey: ["application", appid],
+    queryFn: async () => getApplicationDetails(appid as string),
+    enabled: !!appid,
+  });
 
   // Set startTiming when interview becomes active
   useEffect(() => {
@@ -109,7 +112,9 @@ const AgentModel = () => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   // Auto-scroll to bottom of conversation
@@ -304,7 +309,8 @@ const AgentModel = () => {
         isBrave ||
         interviewState !== "idle" ||
         !applicationData ||
-        isApplicationLoading
+        isApplicationLoading ||
+        applicationData.interviewstatus === "COMPLETED"
       ) {
         return;
       }
@@ -313,8 +319,11 @@ const AgentModel = () => {
       setInterviewState("starting");
 
       try {
-        setDuration(applicationData.jobId?.interviewSettings?.interviewDuration *
-          60 * 1000 || 10 * 60 * 1000); // 10 minutes in milliseconds
+        setDuration(
+          applicationData.jobId?.interviewSettings?.interviewDuration *
+            60 *
+            1000 || 10 * 60 * 1000
+        ); // 10 minutes in milliseconds
         const initialQuery = `{candidateResponse: "", isNearEnd: false}`;
         const result = await chatAction({
           query: initialQuery,
@@ -343,8 +352,12 @@ const AgentModel = () => {
         }, 2000);
       } catch (error) {
         console.error("Failed to initialize interview:", error);
-        setError("Failed to start the interview. Please refresh and try again.");
-        toast.error("Failed to start the interview. Please refresh and try again.");
+        setError(
+          "Failed to start the interview. Please refresh and try again."
+        );
+        toast.error(
+          "Failed to start the interview. Please refresh and try again."
+        );
         setInterviewState("idle");
       }
     };
@@ -369,14 +382,29 @@ const AgentModel = () => {
     }
   }, [applicationData]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const message =
+        "You will lose all entered data if you refresh or leave this page. Are you sure?";
+      e.preventDefault();
+      e.returnValue = message;
+      toast.warning("This may lead to loss of interview data");
+      return message;
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
   // Handle loading and error states for job data
   if (isApplicationLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-lg">Loading interview details...</p>
-        </div>
+      <div className="h-screen flex flex-col items-center justify-center">
+        <span className="intvLoader"></span>
+       
+        <h2 className="text-2xl">Scheduling interview...</h2>
       </div>
     );
   }
@@ -386,7 +414,8 @@ const AgentModel = () => {
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 text-lg">
-            Error loading interview details: {(applicationError as Error).message}
+            Error loading interview details:{" "}
+            {(applicationError as Error).message}
           </p>
           <Button onClick={() => router.back()} className="mt-4">
             Go Back
@@ -414,6 +443,7 @@ const AgentModel = () => {
     setInterviewState("ended");
     stopListening();
     stopSpeaking();
+    router.push(`/interview/${appid}/analytics`);
   };
 
   const handleMicToggle = () => {
@@ -438,19 +468,24 @@ const AgentModel = () => {
     }
   };
 
-  // if(applicationData.interviewstatus === "COMPLETED") {
-  //   return (
-  //     <div className="h-screen flex items-center justify-center  flex-col gap-3">
-  //       <Image src="/interview-completed.png" alt="Interview Completed" width={300} height={300} />
-  //       <div className="text-center">
-  //         <h2 className="text-xl">Interview Completed</h2>
-  //         <Button onClick={() => router.back()} className="mt-4">
-  //           Go Back
-  //         </Button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (applicationData.interviewstatus === "COMPLETED") {
+    return (
+      <div className="h-screen flex items-center justify-center  flex-col gap-3">
+        <Image
+          src="/interview-completed.png"
+          alt="Interview Completed"
+          width={300}
+          height={300}
+        />
+        <div className="text-center">
+          <h2 className="text-xl">Interview Completed</h2>
+          <Button onClick={() => router.back()} className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col overflow-hidden p-4">
@@ -502,8 +537,15 @@ const AgentModel = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-700 rounded-lg flex items-center gap-2">
           {error}
+          <Button
+            variant="outline"
+            onClick={() => window.location.reload()}
+            className="ml-2"
+          >
+            Retry
+          </Button>
         </div>
       )}
 
@@ -568,7 +610,9 @@ const AgentModel = () => {
                   }`}
                 >
                   <h3 className="font-semibold min-w-fit">
-                    {msg.role === "assistant" ? "AI Interviewer:" : "Candidate:"}
+                    {msg.role === "assistant"
+                      ? "AI Interviewer:"
+                      : "Candidate:"}
                   </h3>
                   {msg.role === "assistant" ? (
                     <div>{JSON.parse(msg.content).aiResponse}</div>
@@ -656,6 +700,8 @@ const AgentModel = () => {
           <BsThreeDotsVertical className="size-5" />
         </Button>
       </div>
+      <br />
+      <div className="p-0.5 bgGrad text-center fixed bottom-0 inset-x-0 text-white"><span>Powered by Huminex</span></div>
     </div>
   );
 };
