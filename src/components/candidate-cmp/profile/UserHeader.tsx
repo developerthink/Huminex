@@ -2,6 +2,7 @@
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { File, Edit, CircleUserRoundIcon, XIcon, Edit2 } from "lucide-react";
+import Link from "next/link";
 import { UserData } from "@/types/user";
 import { uploadToCloudinary } from "@/lib/image-upload";
 import { toast } from "sonner";
@@ -138,10 +139,12 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, onUpdateUser }) => {
       {/* Action Buttons */}
       <div className="flex space-x-3">
         
+        <Link href={'/candidates/' + user._id} target="_blank">
         <Button variant="ghost" className="bg-white" aria-label="View your resume">
           <File className="w-4 h-4 mr-2" />
           View Profile
         </Button>
+        </Link>
       </div>
     </div>
   );
