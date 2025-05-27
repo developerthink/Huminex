@@ -31,7 +31,6 @@ const fetchProfileCompletion = async () => {
   return response.data.data;
 };
 
-
 // Component
 const Dashboard = () => {
   const router = useRouter();
@@ -70,8 +69,8 @@ const Dashboard = () => {
 
   const {
     data: jobsData,
-    isLoading:jobsLoading,
-    error:jobsError,
+    isLoading: jobsLoading,
+    error: jobsError,
   } = useQuery({
     queryKey: ["jobs"],
     queryFn: () => fetchAllJobs(),
@@ -91,7 +90,7 @@ const Dashboard = () => {
 
   const columns = [
     { header: "ID", accessor: "jobId", hidden: true },
-    
+
     {
       header: "Company",
       accessor: "company",
@@ -142,9 +141,9 @@ const Dashboard = () => {
     { header: "Applied Date", accessor: "appliedDate" },
   ];
 
-if(jobsLoading || applicationsLoading){
-  return <WbLoader/>
-}
+  if (jobsLoading || applicationsLoading) {
+    return <WbLoader />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 m-1 rounded-lg">
@@ -160,14 +159,14 @@ if(jobsLoading || applicationsLoading){
                   </h2>
                   <div className="flex flex-col md:flex-row gap-3">
                     <div>
-                      <div className="relative bg-green-50 rounded-lg border-2 border-green-100 h-48 flex items-center justify-center w-full">
+                      <div className="relative bgGrad text-white rounded-lg border-2 border-green-100 h-48 flex items-center justify-center w-full">
                         <div className="text-center mt-1.5">
-                          <div className="text-6xl font-bold text-gray-900">
+                          <div className="text-6xl font-bold ">
                             {profileLoading
                               ? "..."
                               : `${profileData.completionPercentage}%`}
                           </div>
-                          <p className="text-sm text-gray-700 mt-2">
+                          <p className="text-sm mt-2">
                             of your profile is
                             <br />
                             {profileData.isComplete ? "complete" : "incomplete"}
@@ -311,49 +310,64 @@ if(jobsLoading || applicationsLoading){
                     <TabsTrigger value="recommended">Recommended</TabsTrigger>
                     <TabsTrigger value="invited">Invited</TabsTrigger>
                   </TabsList>
-                 <div className="max-h-96 overflow-hidden overflow-y-auto">
-                 <TabsContent value="recommended">
-                    <div className="mt-4 text-gray-700">
-                      <h3 className="text-lg font-semibold mb-2">
-                        Recommended Jobs
-                      </h3>
-                      <p className="text-gray-600">
-                        Jobs tailored to your profile and preferences.
-                      </p>
-                      {jobsData?.recommendedJobs.map((job: any) => (
-                            <JobCard hasMore={false} key={job._id} job={job} />
-                          ))}
-                          {jobsData?.recommendedJobs.length === 0 && (
+                  <div className="max-h-96 overflow-hidden overflow-y-auto">
+                    <TabsContent value="recommended">
+                      <div className="mt-4 text-gray-700">
+                        <h3 className="text-lg font-semibold mb-2">
+                          Recommended Jobs
+                        </h3>
+                        <p className="text-gray-600">
+                          Jobs tailored to your profile and preferences.
+                        </p>
+                        {jobsData?.recommendedJobs.map((job: any) => (
+                          <JobCard hasMore={false} key={job._id} job={job} />
+                        ))}
+                        {jobsData?.recommendedJobs.length === 0 && (
+                          <div className="grid place-items-center">
+                            <Image
+                              src="/no-job.png"
+                              alt="No Invitations"
+                              width={200}
+                              height={200}
+                            />
                             <p className="text-gray-500 text-center py-4">
                               No recommended jobs found. Update your skills to
                               get personalized recommendations.
                             </p>
-                          )}
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="invited">
-                    <div className="mt-4 text-gray-700">
-                      <h3 className="text-lg font-semibold mb-2">
-                        Invited Jobs
-                      </h3>
-                      <p className="text-gray-600">
-                        Jobs you've been invited to apply for.
-                      </p>
-                      <div>
-                        {jobsData?.invitedJobs.map((job: any) => (
-                          <JobCard hasMore={false} key={job._id} job={job} />
-                          
-                        ))}
-                        {jobsData?.invitedJobs.length === 0 && (
-                          <p className="text-gray-500 text-center py-4">
-                            No invitations yet. Keep your profile updated to
-                            receive job invites.
-                          </p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  </TabsContent>
-                 </div>
+                    </TabsContent>
+                    <TabsContent value="invited">
+                      <div className="mt-4 text-gray-700 text-center">
+                        <h3 className="text-lg font-semibold mb-2">
+                          Invited Jobs
+                        </h3>
+                        <p className="text-gray-600">
+                          Jobs you've been invited to apply for.
+                        </p>
+                        <div>
+                          {jobsData?.invitedJobs.map((job: any) => (
+                            <JobCard hasMore={false} key={job._id} job={job} />
+                          ))}
+                          {jobsData?.invitedJobs.length === 0 && (
+                            <div className="grid place-items-center">
+                              <Image
+                                src="/no-job.png"
+                                alt="No Invitations"
+                                width={200}
+                                height={200}
+                              />
+                              <p className="text-gray-500 text-center py-4">
+                                No invitations yet. Keep your profile updated to
+                                receive job invites.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </div>
                 </Tabs>
               </div>
             </div>
@@ -367,49 +381,40 @@ if(jobsLoading || applicationsLoading){
               <h2 className="text-lg font-semibold text-gray-800 mb-4">
                 Your Recent Interviews
               </h2>
-              {applicationsLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <p className="text-gray-600">Loading applications...</p>
-                </div>
-              ) : error ? (
-                <div className="flex justify-center items-center py-12">
-                  <p className="text-red-500">{error.message}</p>
-                </div>
-              ) : applicationData.applications.length > 0 ? (
-                <div className="w-full">
-                  <TableNex
-                    data={applicationData.applications.slice(0, 3)}
-                    keyField={{
-                      keyId: "jobId",
-                      isVisible: false,
-                    }}
-                    responsive={true}
-                    columns={columns}
-                  />
-                  {applicationData.applications.length > 3 && (
-                    <div className="mt-4 text-center">
-                      <Button
-                        variant="link"
-                        className="text-blue-600 hover:text-blue-800"
-                        onClick={() =>
-                          router.push("/candidate/dashboard/applications")
-                        }
-                      >
-                        View all {applicationData.applications.length}{" "}
-                        applications
-                      </Button>
+              <TableNex
+                data={applicationData.applications.slice(0, 3) || []}
+                noDataMessage={
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <ClipboardList className=" wszelkie-8 h-8 text-gray-400" />
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <ClipboardList className=" wszelkie-8 h-8 text-gray-400" />
+                    <p className="text-gray-500">No recent interviews</p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Your scheduled interviews will appear here
+                    </p>
                   </div>
-                  <p className="text-gray-500">No recent interviews</p>
-                  <p className="text-gray-400 text-sm mt-1">
-                    Your scheduled interviews will appear here
-                  </p>
+                }
+                keyField={{
+                  keyId: "jobId",
+                  isVisible: false,
+                }}
+                responsive={true}
+                colorScheme={{
+                  ACCENT: "var(--primary)",
+                }}
+                columns={columns}
+              />
+              {applicationData.applications.length > 3 && (
+                <div className="mt-4 text-center">
+                  <Button
+                    variant="link"
+                    className="text-blue-600 hover:text-blue-800"
+                    onClick={() =>
+                      router.push("/candidate/dashboard/applications")
+                    }
+                  >
+                    View all {applicationData.applications.length} applications
+                  </Button>
                 </div>
               )}
             </div>
