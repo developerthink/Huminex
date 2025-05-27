@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSpeechRecognition } from "@/lib/speech-to-txt";
 import { useTextToSpeech } from "@/lib/txt-speech";
 import { toast } from "sonner";
-import { marked } from "marked";
 import { chatAction } from "@/actions/action";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Video, VideoOff } from "lucide-react";
@@ -16,23 +15,25 @@ import { FaRegComment } from "react-icons/fa";
 import { RiVoiceAiFill } from "react-icons/ri";
 import { FiPhoneOff } from "react-icons/fi";
 import WebcamFrame from "@/components/global-cmp/webcam-frame";
-import { createConversation, getApplicationDetails } from "@/actions/checkpointer";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
+import { getApplicationDetails } from "@/actions/checkpointer";
 
 interface Message {
-  role: "user" | "ai";
-  text: string;
+  role: "user" | "assistant";
+  content: string;
+  type?: "aiResponse" | "candidateResponse";
 }
 
-const CHAT_LIMIT = 100; // Maximum allowed chats
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
 const AgentModel = () => {
-  const params = useParams()
-
+  const params = useParams();
+  const router = useRouter();
   const { appid } = params;
-  
+
   const {
     interimTranscript,
     finalTranscript,
@@ -46,36 +47,77 @@ const AgentModel = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chatCount, setChatCount] = useState<number>(0);
   const [interviewState, setInterviewState] = useState<
     "idle" | "starting" | "active" | "ended"
   >("idle");
+  const [context, setContext] = useState<Message[]>([]);
   const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 3;
-
-  const [context, setContext] = useState<{ role: string; content: string }[]>([]);
-  const [conversation, setConversation] = useState<Message[]>([]);
-  const { speak, stopSpeaking, isSpeaking, getAudioElement } = useTextToSpeech();
+  const { speak, stopSpeaking, isSpeaking } = useTextToSpeech();
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const [isBrave, setIsBrave] = useState(false);
   const [endRecording, setEndRecording] = useState(false);
-  const [openaiApiKeyIndex, setOpenaiApiKeyIndex] = useState<number>(0);
   const [isWebCamOn, setIsWebCamOn] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [duration, setDuration] = useState(10 * 60 * 1000); // 10 minutes in milliseconds
+  const [startTiming, setStartTiming] = useState<number | null>(null);
+  const [isNearEnd, setIsNearEnd] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(duration); // Remaining time in milliseconds
 
-  // Fetch job details using useQuery
-  const { data: applicationData, isLoading: isApplicationLoading, error: applicationError } = useQuery({
+  const {
+    data: applicationData,
+    isLoading: isApplicationLoading,
+    error: applicationError,
+  } = useQuery({
     queryKey: ["application", appid],
     queryFn: async () => getApplicationDetails(appid as string),
     enabled: !!appid,
   });
 
+  // Set startTiming when interview becomes active
   useEffect(() => {
-    const storedCount = localStorage.getItem("chatCount");
-    if (storedCount) {
-      setChatCount(parseInt(storedCount, 10));
+    if (interviewState === "active" && !startTiming) {
+      setStartTiming(Date.now());
+      setRemainingTime(duration);
     }
-  }, []);
+  }, [interviewState, duration]);
 
+  // Real-time timer
+  useEffect(() => {
+    if (interviewState !== "active" || !startTiming) return;
+
+    const timer = setInterval(() => {
+      const elapsedTime = Date.now() - startTiming;
+      const newRemainingTime = Math.max(0, duration - elapsedTime);
+      setRemainingTime(newRemainingTime);
+
+      // Set isNearEnd when 30 seconds or less remain
+      if (newRemainingTime <= 30 * 1000 && !isNearEnd) {
+        setIsNearEnd(true);
+      }
+
+      // End interview when time is up
+      if (newRemainingTime <= 0) {
+        setInterviewState("ended");
+        setEndRecording(true);
+        stopListening();
+        stopSpeaking();
+      }
+    }, 2000); // Update every second
+
+    return () => clearInterval(timer);
+  }, [interviewState, startTiming, duration, isNearEnd]);
+
+  // Format remaining time as MM:SS
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  // Auto-scroll to bottom of conversation
   useEffect(() => {
     const scrollToBottom = () => {
       if (conversationEndRef.current) {
@@ -85,133 +127,143 @@ const AgentModel = () => {
         });
       }
     };
-    setTimeout(scrollToBottom, 0);
-  }, [conversation]);
+    setTimeout(scrollToBottom, 100);
+  }, [context]);
 
+  // Handle final transcript
   useEffect(() => {
-    if (!finalTranscript.trim()) return;
+    if (!finalTranscript.trim() || interviewState !== "active") return;
     const userText = finalTranscript.trim();
     handleAIConversation(userText);
-  }, [finalTranscript]);
+  }, [finalTranscript, interviewState]);
 
-  const handleAIConversation = async (userText: string) => {
+  // Sleep utility for retries
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  const handleAIConversation = async (userText: string, isRetry = false) => {
     if (!userText?.trim()) return;
 
-    if (chatCount >= CHAT_LIMIT) {
-      toast.error("Chat limit reached!", {
-        position: "top-center",
-        duration: 5000,
-      });
-      stopListening();
-      stopSpeaking();
-      resetTranscript();
-      return;
-    }
-
-    if (isLoading) {
+    if (isLoading && !isRetry) {
       console.log("Request already in progress, ignoring...");
       return;
     }
 
-    const newCount = chatCount + 1;
-    setChatCount(newCount);
-    localStorage.setItem("chatCount", newCount.toString());
+    // Add user message to conversation if not a retry
+    if (!isRetry) {
+      stopListening();
+      stopSpeaking();
+      resetTranscript();
 
-    setConversation((prev) => [...prev, { role: "user", text: userText }]);
-    stopListening();
-    stopSpeaking();
-    resetTranscript();
+      setContext((prev) => [
+        ...prev,
+        {
+          role: "user",
+          content: userText,
+        },
+      ]);
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await chatAction(
-        userText,
-        context as { role: "user" | "assistant" | "system"; content: string }[],
-        openaiApiKeyIndex
-      );
+      // Prepare context for API call
+      const apiContext = context.map((msg) => ({
+        role: msg.role as "user" | "assistant",
+        content:
+          msg.role === "user"
+            ? `{candidateResponse: "${msg.content}", isNearEnd: ${isNearEnd}}`
+            : msg.content,
+      }));
 
-      if (result.error && retryCount < MAX_RETRIES) {
-        setRetryCount((prev) => prev + 1);
-        toast.warning(`Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
-        setTimeout(() => {
-          handleAIConversation(userText);
-        }, 2000);
-        return;
+      // Add current user message if not a retry
+      if (!isRetry) {
+        apiContext.push({
+          role: "user" as const,
+          content: `{candidateResponse: "${userText}", isNearEnd: ${isNearEnd}}`,
+        });
       }
 
-      setRetryCount(0);
-      const newContext = result.context;
-      setContext(newContext);
+      const result = await chatAction({
+        query: `{"candidateResponse": "${userText}", "isNearEnd": ${isNearEnd}}`,
+        context: apiContext,
+        appData: applicationData,
+      });
 
-      const assistantResponse = newContext[newContext.length - 1].content;
-      let aiText: string;
-      let parsedResponse: any;
+      if (!result.data) {
+        throw new Error(result.error || "Failed to get response");
+      }
 
+      let parsedResponse;
       try {
-        parsedResponse = JSON.parse(assistantResponse);
-        setOpenaiApiKeyIndex(result.apiKeyIndex as number);
-
-        try {
-          await createConversation(appid as string, parsedResponse);
-        } catch (convError) {
-          console.error("Failed to save conversation:", convError);
-        }
-
-        aiText =
-          parsedResponse.currentQuestion ||
-          "I'm sorry, could you please repeat that?";
-
-        if (parsedResponse.interviewStage) {
-          setInterviewState(
-            parsedResponse.interviewStage === "closing" ? "ended" : "active"
-          );
-        }
+        parsedResponse = JSON.parse(result.data);
       } catch (parseError) {
         console.error("Failed to parse AI response:", parseError);
-        aiText =
-          "I apologize for the technical difficulty. Let's continue with the interview. Could you please tell me about your experience?";
+        parsedResponse = {
+          aiResponse: result.data,
+          editorQuestion: null,
+          isEnded: false,
+        };
       }
 
-      setConversation((prev) => [...prev, { role: "ai", text: aiText }]);
+      const { aiResponse, isEditorQuestion, isEnded } = parsedResponse;
 
+      // Add AI response to conversation
+      setContext((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: result.data,
+        },
+      ]);
+
+      // Check if interview should end
+      if (isEnded || isNearEnd) {
+        handleEndInterview();
+      }
+
+      // Reset retry count on success
+      setRetryCount(0);
+
+      // Speak the response
       try {
-        await speak(aiText, { rate: 1.0, pitch: 1.0, volume: 1.0 }, () => {
-          if (interviewState !== "ended") {
-            startListening();
+        await speak(aiResponse, { rate: 1.0, pitch: 1.0, volume: 1.0 }, () => {
+          if (interviewState === "active" && !isEnded && !isNearEnd) {
+            setTimeout(() => startListening(), 500);
           }
         });
       } catch (speakError) {
         console.error("Text-to-speech error:", speakError);
-        startListening();
+        if (interviewState === "active" && !isEnded && !isNearEnd) {
+          setTimeout(() => startListening(), 500);
+        }
       }
-    } catch (err) {
-      console.error("AI Error:", err);
+    } catch (error) {
+      console.error("AI conversation error:", error);
+
+      // Retry logic
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying... Attempt ${retryCount + 1}/${MAX_RETRIES}`);
+        setRetryCount((prev) => prev + 1);
+        await sleep(RETRY_DELAY * (retryCount + 1));
+        return handleAIConversation(userText, true);
+      }
+
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
+        error instanceof Error ? error.message : "Failed to get AI response"
       );
+      toast.error("Failed to get response from AI. Please try again.");
 
-      const errorText =
-        retryCount >= MAX_RETRIES
-          ? "I'm experiencing technical difficulties. Please continue with your response."
-          : "I apologize for the interruption. Please continue with your response.";
-
-      setConversation((prev) => [...prev, { role: "ai", text: errorText }]);
-
-      try {
-        await speak(errorText, { rate: 1.0, pitch: 1.0, volume: 1.0 }, () => {
-          if (retryCount < MAX_RETRIES) {
-            startListening();
-          }
-        });
-      } catch (speakError) {
-        startListening();
+      if (interviewState === "active" && !isNearEnd) {
+        setTimeout(() => startListening(), 1000);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Browser detection
   function detectBrowser() {
     const userAgent = navigator.userAgent;
     if (userAgent.indexOf("Edg") !== -1) {
@@ -220,18 +272,18 @@ const AgentModel = () => {
     if (userAgent.indexOf("Chrome") !== -1) {
       if (
         (navigator as any).brave &&
-        (navigator as any).brave.isBrave.name === "isBrave"
+        (navigator as any).brave.isBrave?.name === "isBrave"
       ) {
         return "Brave";
       }
       return "Google Chrome";
-    } else {
-      return "Unknown Browser";
     }
+    return "Unknown Browser";
   }
 
+  // Check browser compatibility
   useEffect(() => {
-    setTimeout(() => {
+    const checkBrowser = () => {
       const browser = detectBrowser();
       if (browser === "Brave") {
         toast.warning(
@@ -243,103 +295,213 @@ const AgentModel = () => {
         );
         setIsBrave(true);
       }
-    }, 1000);
+    };
+
+    const timer = setTimeout(checkBrowser, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const chatCount = localStorage.getItem("chatCount");
-    if (chatCount === "30") {
-      toast.error("Chat limit reached!", {
-        position: "top-center",
-        duration: 5000,
-      });
-    }
-  }, [chatCount]);
-
+  // Initialize interview
   useEffect(() => {
     const initializeInterview = async () => {
-      if (interviewState === "idle" && conversation.length === 0) {
-        setInterviewState("starting");
+      if (
+        hasInitialized ||
+        isBrave ||
+        interviewState !== "idle" ||
+        !applicationData ||
+        isApplicationLoading ||
+        applicationData.interviewstatus === "COMPLETED"
+      ) {
+        return;
+      }
 
-        try {
-          const result = await chatAction("", [], openaiApiKeyIndex);
-          const parsedResponse = JSON.parse(result.response);
+      setHasInitialized(true);
+      setInterviewState("starting");
 
-          setConversation([
-            { role: "ai", text: parsedResponse.currentQuestion },
-          ]);
-          setContext(result.context);
-          setInterviewState("active");
-          setTimeout(() => {
-            setIsWebCamOn(true);
-          }, 2000);
-          await speak(
-            parsedResponse.currentQuestion,
-            { rate: 1.0, pitch: 1.0, volume: 1.0 },
-            () => {
-              startListening();
-            }
-          );
-        } catch (error) {
-          console.error("Failed to initialize interview:", error);
-          const fallbackGreeting =
-            "Hello! Welcome to your AI interview. Let's get started. Could you please tell me about yourself?";
-          setConversation([{ role: "ai", text: fallbackGreeting }]);
-          setInterviewState("active");
+      try {
+        setDuration(
+          applicationData.jobId?.interviewSettings?.interviewDuration *
+            60 *
+            1000 || 10 * 60 * 1000
+        ); // 10 minutes in milliseconds
+        const initialQuery = `{candidateResponse: "", isNearEnd: false}`;
+        const result = await chatAction({
+          query: initialQuery,
+          context: [],
+          appData: applicationData,
+        });
 
-          await speak(
-            fallbackGreeting,
-            { rate: 1.0, pitch: 1.0, volume: 1.0 },
-            () => {
-              startListening();
-            }
-          );
+        if (!result.data) {
+          throw new Error(result.error || "Failed to initialize interview");
         }
+
+        const parsedResponse = JSON.parse(result.data);
+        const { aiResponse } = parsedResponse;
+
+        setContext([{ role: "assistant", content: result.data }]);
+        setInterviewState("active");
+
+        speak(aiResponse, { rate: 1.0, pitch: 1.0, volume: 1.0 }, () => {
+          if (!isNearEnd) {
+            setTimeout(() => startListening(), 500);
+          }
+        });
+
+        setTimeout(() => {
+          setIsWebCamOn(true);
+        }, 2000);
+      } catch (error) {
+        console.error("Failed to initialize interview:", error);
+        setError(
+          "Failed to start the interview. Please refresh and try again."
+        );
+        toast.error(
+          "Failed to start the interview. Please refresh and try again."
+        );
+        setInterviewState("idle");
       }
     };
 
-    if (!isBrave) {
-      initializeInterview();
+    initializeInterview();
+  }, [
+    isBrave,
+    hasInitialized,
+    interviewState,
+    applicationData,
+    isApplicationLoading,
+  ]);
+
+  // Handle completed interview status
+  useEffect(() => {
+    if (applicationData?.interviewstatus === "COMPLETED") {
+      console.log("Interview Completed");
+      setInterviewState("ended");
+      setEndRecording(true);
+      stopListening();
+      stopSpeaking();
     }
-  }, [interviewState, isBrave]);
+  }, [applicationData]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const message =
+        "You will lose all entered data if you refresh or leave this page. Are you sure?";
+      e.preventDefault();
+      e.returnValue = message;
+      toast.warning("This may lead to loss of interview data");
+      return message;
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   // Handle loading and error states for job data
   if (isApplicationLoading) {
-    return <div>Loading job details...</div>;
+    return (
+      <div className="h-screen flex flex-col items-center justify-center">
+        <span className="intvLoader"></span>
+       
+        <h2 className="text-2xl">Scheduling interview...</h2>
+      </div>
+    );
   }
+
   if (applicationError) {
-    return <div>Error loading job details: {(applicationError as Error).message}</div>;
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 text-lg">
+            Error loading interview details:{" "}
+            {(applicationError as Error).message}
+          </p>
+          <Button onClick={() => router.back()} className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
+
   if (!applicationData) {
-    return <div>No job details available</div>;
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg">No interview details available</p>
+          <Button onClick={() => router.back()} className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
-  const router = useRouter();
 
   const handleEndInterview = () => {
     setEndRecording(true);
+    setInterviewState("ended");
     stopListening();
+    stopSpeaking();
     router.push(`/interview/${appid}/analytics`);
   };
 
+  const handleMicToggle = () => {
+    if (isMicOn) {
+      stopListening();
+    } else {
+      if (interviewState === "active") {
+        startListening();
+      }
+    }
+  };
+
+  const repeatLastResponse = () => {
+    const lastAIMessage = context
+      .slice()
+      .reverse()
+      .find((msg) => msg.role === "assistant")?.content;
+
+    if (lastAIMessage && !isSpeaking) {
+      const parsedResponse = JSON.parse(lastAIMessage);
+      speak(parsedResponse.aiResponse, { rate: 1.0, pitch: 1.0, volume: 1.0 });
+    }
+  };
+
+  if (applicationData.interviewstatus === "COMPLETED") {
+    return (
+      <div className="h-screen flex items-center justify-center  flex-col gap-3">
+        <Image
+          src="/interview-completed.png"
+          alt="Interview Completed"
+          width={300}
+          height={300}
+        />
+        <div className="text-center">
+          <h2 className="text-xl">Interview Completed</h2>
+          <Button onClick={() => router.back()} className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-screen bg-gray-100 flex flex-col p-4">
-      {/* Header Section */}
+    <div className="h-screen bg-gray-100 flex flex-col overflow-hidden p-4">
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-3">
-          <Button
-            variant={"ghost"}
-            size={"icon"}
-            onClick={() => router.back()}
-            aria-label="Back to previous page"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1
-            className="text-xl border-r pr-2 font-semibold"
-            aria-label="AI Interview Title"
-          >
-            AI Interview
-          </h1>
+          <Image
+            className="rounded-lg object-cover"
+            src={
+              applicationData.jobId?.employerId?.companyDetails?.logo ||
+              "/logo.png"
+            }
+            alt="Company Logo"
+            width={50}
+            height={50}
+          />
           <div className="flex items-center space-x-2">
             <span className="text-sm bg-gray-200 px-2 py-1 rounded-full flex items-center gap-1">
               <IoLanguageSharp />
@@ -347,26 +509,49 @@ const AgentModel = () => {
             </span>
             <span className="text-sm bg-gray-200 px-2 py-1 rounded-full flex items-center gap-1">
               <MdBusinessCenter className="w-4 h-4" />
-              {applicationData.jobId?.title || "Gen AI Developer"}
+              {applicationData.jobId?.title || "Position"}
             </span>
             <span className="text-sm bg-gray-200 px-2 py-1 rounded-full flex items-center gap-1">
               <BsBuildingFillCheck />
-              {applicationData.jobId?.employerId?.companyDetails?.name || "Unknown Company"}
+              {applicationData.jobId?.employerId?.companyDetails?.name ||
+                "Company"}
             </span>
           </div>
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-1">
             <span className="text-sm font-medium">
-              Interview Duration: {applicationData.jobId?.interviewSettings?.interviewDuration || 10} min
+              Duration: {formatTime(remainingTime)}
             </span>
           </div>
+          {interviewState === "starting" && (
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              <span className="text-sm text-primary">
+                Starting interview...
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-700 rounded-lg flex items-center gap-2">
+          {error}
+          <Button
+            variant="outline"
+            onClick={() => window.location.reload()}
+            className="ml-2"
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden lg:flex-row gap-4">
-        {/* Video Section by webcam */}
+        {/* Video Section */}
         <Card
           className="flex-1 relative grid place-items-center overflow-hidden rounded-lg h-96 lg:h-auto"
           aria-label="Video Feed"
@@ -379,36 +564,34 @@ const AgentModel = () => {
             height="400px"
             showControls={true}
           />
-
-          {finalTranscript ||
-            (interimTranscript && (
-              <div className="p-2 px-3 bottom-2 absolute bg-black/50 text-white rounded-lg mb-4">
-                <span className="font-bold">{finalTranscript}</span>
-                <span className="font-normal"> {interimTranscript}</span>
-              </div>
-            ))}
+          {(finalTranscript || interimTranscript) && (
+            <div className="p-2 px-3 bottom-2 absolute bg-black/80 text-white rounded-lg mb-4 max-w-[90%]">
+              <span className="font-bold">{finalTranscript}</span>
+              <span className="font-normal opacity-70">
+                {" "}
+                {interimTranscript}
+              </span>
+            </div>
+          )}
         </Card>
 
         {/* Right Panel */}
         <div className="lg:w-1/3 grid grid-rows-2 gap-4 overflow-hidden">
-          {/* Current Question */}
+          {/* Conversation Panel */}
           <Card className="p-4 gap-2 bg-white rounded-lg shadow">
             <div className="flex border-b justify-between items-center pb-4">
               <h2
                 className="text-lg font-semibold flex items-center gap-2"
-                aria-label="Interviewer Transcript"
+                aria-label="Interview Conversation"
               >
                 <FaRegComment />
-                Interviewer Transcript
+                Interview Conversation
               </h2>
               <button
-                className="bg-primary/20 p-1 rounded-full text-primary text-xl"
-                onClick={() => {
-                  const lastAIMessage = conversation.find(msg => msg.role === "ai")?.text;
-                  if (lastAIMessage) speak(lastAIMessage);
-                }}
-                aria-label="Listen to Question"
-                disabled={interviewState !== "active"}
+                className="bg-primary/20 p-1 rounded-full text-primary text-xl hover:bg-primary/30 transition-colors"
+                onClick={repeatLastResponse}
+                aria-label="Repeat Last Response"
+                disabled={interviewState !== "active" || isSpeaking}
               >
                 <RiVoiceAiFill className="w-5 h-5" />
               </button>
@@ -417,28 +600,45 @@ const AgentModel = () => {
               ref={conversationEndRef}
               className="overflow-hidden overflow-y-auto space-y-2 max-h-[calc(100vh-400px)]"
             >
-              {conversation.map(
-                (msg, index) =>
-                  msg.role === "ai" && (
-                    <div
-                      key={index}
-                      className={`p-2 border-b rounded-lg flex gap-2 bg-primary/20 text-primary w-full`}
-                    >
-                      <h3 className="font-semibold">AI:</h3>
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: marked.parse(msg.text),
-                        }}
-                      />
-                    </div>
-                  )
-              )}
+              {context.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`p-2 rounded-lg flex gap-2 ${
+                    msg.role === "assistant"
+                      ? "bg-primary/20 text-primary border-l-4 border-primary"
+                      : "bg-gray-100 text-gray-700 border-l-4 border-gray-400"
+                  }`}
+                >
+                  <h3 className="font-semibold min-w-fit">
+                    {msg.role === "assistant"
+                      ? "AI Interviewer:"
+                      : "Candidate:"}
+                  </h3>
+                  {msg.role === "assistant" ? (
+                    <div>{JSON.parse(msg.content).aiResponse}</div>
+                  ) : (
+                    <div>{msg.content}</div>
+                  )}
+                </div>
+              ))}
             </div>
           </Card>
 
-          {/* AI Interviewer */}
+          {/* AI Interviewer Status */}
           <Card className="w-full grid place-items-center text-2xl text-white bg-primary relative">
-            <h2>AI Interviewer</h2>
+            <div className="text-center">
+              <h2 className="mb-2">AI Interviewer</h2>
+              <div className="text-sm opacity-80">
+                {interviewState === "starting" && "Initializing..."}
+                {interviewState === "active" &&
+                  (isSpeaking
+                    ? "Speaking..."
+                    : isListening
+                    ? "Listening..."
+                    : "Ready")}
+                {interviewState === "ended" && "Interview Ended"}
+              </div>
+            </div>
           </Card>
         </div>
       </div>
@@ -448,22 +648,24 @@ const AgentModel = () => {
         <Button
           className="size-12 hover:bg-destructive/30 !text-destructive"
           variant="outline"
-          size={"icon"}
+          size="icon"
           onClick={handleEndInterview}
           aria-label="End Interview"
+          disabled={interviewState === "ended"}
         >
           <FiPhoneOff className="size-5" />
         </Button>
+
         <Button
           className={
             !isMicOn
               ? "size-12 !bg-destructive !text-white"
               : "size-12 !bg-primary !text-white"
           }
-          size={"icon"}
-          onClick={() => {
-            isMicOn ? stopListening() : startListening();
-          }}
+          size="icon"
+          onClick={handleMicToggle}
+          disabled={interviewState !== "active"}
+          aria-label={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
         >
           {isMicOn ? (
             <MdMic className="size-6" />
@@ -471,14 +673,16 @@ const AgentModel = () => {
             <MdMicOff className="size-6" />
           )}
         </Button>
+
         <Button
           className={
             isWebCamOn
               ? "size-12 !bg-primary !text-white"
               : "size-12 !bg-destructive !text-white"
           }
-          size={"icon"}
+          size="icon"
           onClick={() => setIsWebCamOn(!isWebCamOn)}
+          aria-label={isWebCamOn ? "Turn Off Camera" : "Turn On Camera"}
         >
           {isWebCamOn ? (
             <Video className="size-6" />
@@ -490,12 +694,14 @@ const AgentModel = () => {
         <Button
           className="size-12"
           variant="outline"
-          size={"icon"}
+          size="icon"
           aria-label="More Options"
         >
           <BsThreeDotsVertical className="size-5" />
         </Button>
       </div>
+      <br />
+      <div className="p-0.5 bgGrad text-center fixed bottom-0 inset-x-0 text-white"><span>Powered by Huminex</span></div>
     </div>
   );
 };

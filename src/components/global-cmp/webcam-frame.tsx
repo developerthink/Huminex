@@ -135,7 +135,7 @@ const WebcamFrame: React.FC<WebcamFrameProps> = ({
       case 'loading':
         return (
           <div
-            className={`flex flex-col items-center justify-center rounded-lg p-5 bg-gray-800 text-white ${
+            className={`flex flex-col items-center justify-center rounded-lg p-5 bg-black text-white ${
               typeof width === 'number' ? `w-[${width}px]` : `w-${width}`
             } ${typeof height === 'number' ? `h-[${height}px]` : `h-${height}`}`}
           >
@@ -147,7 +147,7 @@ const WebcamFrame: React.FC<WebcamFrameProps> = ({
 
       case 'video-off':
         return (
-          <div className="absolute inset-0 grid place-items-center bg-gray-800 text-white">
+          <div className="absolute inset-0 grid place-items-center bg-black text-white">
             <h3 className="text-lg font-semibold">Camera is turned off</h3>
             <p className="text-sm">Your camera is currently disabled.</p>
           </div>
@@ -156,7 +156,7 @@ const WebcamFrame: React.FC<WebcamFrameProps> = ({
       case 'no-permissions':
         return (
           <div
-            className={`flex flex-col items-center justify-center bg-gray-800 text-white ${
+            className={`flex flex-col items-center justify-center bg-black text-white ${
               typeof width === 'number' ? `w-[${width}px]` : `w-${width}`
             } ${typeof height === 'number' ? `h-[${height}px]` : `h-${height}`}`}
           >
@@ -177,7 +177,7 @@ const WebcamFrame: React.FC<WebcamFrameProps> = ({
       case 'not-supported':
         return (
           <div
-            className={`flex flex-col items-center justify-center mt-3 bg-gray-800 text-white ${
+            className={`flex flex-col items-center justify-center mt-3 bg-black text-white ${
               typeof width === 'number' ? `w-[${width}px]` : `w-${width}`
             } ${typeof height === 'number' ? `h-[${height}px]` : `h-${height}`}`}
           >
@@ -190,7 +190,7 @@ const WebcamFrame: React.FC<WebcamFrameProps> = ({
       case 'error':
         return (
           <div
-            className={`flex flex-col mt-3 items-center justify-center bg-gray-800 text-white ${
+            className={`flex flex-col mt-3 items-center justify-center bg-black text-white ${
               typeof width === 'number' ? `w-[${width}px]` : `w-${width}`
             } ${typeof height === 'number' ? `h-[${height}px]` : `h-${height}`}`}
           >
@@ -214,7 +214,7 @@ const WebcamFrame: React.FC<WebcamFrameProps> = ({
   };
 
   return (
-    <div className={`webcam-frame bg-black grid place-items-center text-white ${className}`}>
+    <div className={`webcam-frame bg-black grid absolute inset-0 place-items-center text-white ${className}`}>
       <div
         className={`relative rounded-lg overflow-hidden ${
           typeof width === 'number' ? `w-[${width}px]` : `w-${width}`
@@ -236,33 +236,17 @@ const WebcamFrame: React.FC<WebcamFrameProps> = ({
             className={`w-full h-full object-cover ${webcamStatus === 'ready' ? 'block' : 'hidden'}`}
           />
         )}
+        {/* {
+          webcamStatus === 'video-off' && (
+            <div className="absolute inset-0 z-50 grid place-items-center bg-black text-white">
+              <img src="disable-camera.png" alt="Webcam Off" width={100} height={100} />
+              <h3 className="text-lg font-semibold">Camera is turned off</h3>
+              <p className="text-sm">Your camera is currently disabled.</p>
+            </div>
+          )
+        } */}
 
-        {/* Recording controls */}
-        {showControls && webcamStatus === 'ready' && (
-          <div className="absolute bottom-4 left-4 right-4 flex justify-center space-x-4">
-            {!isRecording && (
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={startRecording}
-              >
-                Record
-              </Button>
-            )}
-            {isRecording && (
-              <Button
-                className="bg-red-600 hover:bg-red-700"
-                onClick={stopRecording}
-              >
-                Stop
-              </Button>
-            )}
-            {isRecording && (
-              <span className="text-white font-semibold">
-                {formatTime(recordingTime)}
-              </span>
-            )}
-          </div>
-        )}
+       
       </div>
 
       {/* Audio status */}
@@ -272,38 +256,10 @@ const WebcamFrame: React.FC<WebcamFrameProps> = ({
         </div>
       )}
 
-      {/* Recorded videos */}
-      {videoURLs.length > 0 && (
-        <div className="mt-4 w-full">
-          <h3 className="text-lg font-semibold text-white">Recorded Videos:</h3>
-          <div className="flex overflow-x-auto space-x-4 p-4">
-            {videoURLs.map((videoURL, i) => (
-              <div key={`video_${i}`} className="flex flex-col items-center">
-                <video
-                  src={videoURL}
-                  className="w-48 h-36 object-cover rounded-lg"
-                  autoPlay
-                  loop
-                  muted
-                />
-                <div className="mt-2 flex space-x-2">
-                  <Button
-                    className="bg-blue-600 hover:bg-blue-700"
-                    onClick={() => downloadRecording()}
-                  >
-                    Download
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Error display */}
-      {recordingError && (
+      {/* {recordingError && (
         <div className="mt-4 text-red-500">{recordingError}</div>
-      )}
+      )} */}
     </div>
   );
 };
