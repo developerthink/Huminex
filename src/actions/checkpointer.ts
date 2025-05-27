@@ -78,53 +78,170 @@ export const getApplicationDetails = async (appId: string) => {
   }
 };
 
+// Helper function to safely parse JSON strings
+const safeJsonParse = (jsonString: string): any => {
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    console.error("Original string:", jsonString);
+    return null;
+  }
+};
+
 const openai = new OpenAI({
   apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[0],
   baseURL: "https://api.groq.com/openai/v1",
-  timeout: 10000, // 30 second timeout
+  timeout: 10000, // 10 second timeout
 });
+
 const chatOpenAI = async (analyticsData: any) => {
-  const systemPrompt = `You are an expert AI interview analyst. Analyze the provided interview conversation data and provide comprehensive insights.
+  // Format the conversation from the fetched data
+  let conversationText = "";
+  analyticsData.forEach((entry: any, index: number) => {
+    // Parse interviewer response
+    const interviewerData = safeJsonParse(entry.interviewerResponse);
+    const interviewerResponse = interviewerData?.aiResponse || "";
+    
+    // Parse candidate response
+    const candidateData = safeJsonParse(entry.candidateResponse);
+    const candidateResponse = candidateData?.candidateResponse || "";
 
-Your analysis should include:
+    // Interviewer speaks first, as per simulation
+    conversationText += `${index + 1}. Interviewer: "${interviewerResponse}"\n`;
+    if (candidateResponse) {
+      conversationText += `${index + 1}. Candidate: "${candidateResponse}"\n`;
+    }
+  });
 
-1. *Overall Performance Metrics*:
-   - Average confidence score (0-100)
-   - Communication fluency score (0-100)
-   - Technical accuracy score (0-100)
-   - Overall interview performance (0-100)
-
-2. *Behavioral Analysis*:
-   - Response consistency
-   - Problem-solving approach
-   - Stress handling capability
-   - Professional demeanor
-
-3. *Technical Assessment*:
-   - Knowledge depth in relevant areas
-   - Practical application understanding
-   - Learning agility indicators
-
-4. *Communication Skills*:
-   - Clarity of expression
-   - Grammar and language proficiency
-   - Structured thinking patterns
-   - Question comprehension ability
-
-5. *Hiring Recommendation*:
-   - Strengths summary
-   - Areas for improvement
-   - Overall fit assessment
-   - Risk factors (if any)
-   - Final recommendation (Strong Hire/Hire/No Hire/Strong No Hire)
-
-6. *Interview Quality Metrics*:
-   - Question difficulty distribution
-   - Response time patterns
-   - Interview completion rate
-   - Engagement level
-
-Provide specific examples from the conversation data to support your analysis. Return the response in JSON format with clear sections and numerical scores where applicable.`;
+  const systemPrompt = `
+  You are an AI system designed to analyze interview conversations and generate comprehensive analytics data for a frontend dashboard. The conversation to analyze is as follows:
+  
+  **Conversation**:
+  ${conversationText}
+  
+  **Task**: Analyze the conversation and generate detailed analytics data in JSON format that matches the dashboard requirements. Generate comprehensive metrics for all the following categories:
+  
+  **Required Analytics Structure**:
+  
+  1. **Overall Performance Metrics**:
+     - Overall Score (0-100)
+     - Communication Score (0-100) 
+     - Technical Knowledge Score (0-100)
+     - Problem Solving Score (0-100)
+  
+  2. **Radar Chart Data** (for pentagon visualization):
+     - Communication Clarity (0-100)
+     - Technical Knowledge (0-100) 
+     - Response Relevance (0-100)
+     - Professional Vocabulary (0-100)
+     - Problem Solving Approach (0-100)
+  
+  3. **Question Performance**: Individual scores for each question (Q1, Q2, Q3, etc.) scored 0-100
+  
+  4. **Detailed Metrics** (for bar chart):
+     - Response Completeness (0-10)
+     - Technical Vocabulary Usage (0-10)
+     - Answer Relevance (0-10)
+     - Explanation Clarity (0-10)
+     - Example Provision (0-10)
+     - Professional Tone (0-10)
+     - Response Structure (0-10)
+     - Domain Knowledge (0-10)
+  
+  5. **Performance Over Time** (line chart data):
+     - Arrays of scores showing progression across questions for:
+       - Technical accuracy progression
+       - Communication clarity progression
+       - Response relevance progression
+       - Professional vocabulary progression
+  
+  6. **Keywords Detected**: Array of unique technical and professional keywords actually used by the candidate in their responses (e.g., "React", "GraphQL", "API", "database", "authentication", "scalability", "performance", "optimization", etc.)
+  
+  7. **Comprehensive Feedback**:
+     - Strengths (4-6 detailed points based on actual conversation)
+     - Areas for Improvement (4-6 detailed points with specific recommendations)
+     - HR Insights for decision making
+  
+  8. **Advanced HR Analytics**:
+     - Communication Style Assessment
+     - Technical Competency Level
+     - Cultural Fit Indicators
+     - Experience Level Estimation
+     - Learning Potential Assessment
+     - Red Flags (if any)
+     - Interview Readiness Score
+  
+  **Guidelines**:
+  - Base all analysis strictly on the actual conversation content
+  - Extract only keywords that were genuinely mentioned by the candidate
+  - Evaluate technical knowledge demonstration through actual examples given
+  - Assess communication through response structure and clarity
+  - Provide practical insights that help HR make informed decisions
+  - Include specific quotes or examples from the conversation to justify scores
+  - Generate progression data showing realistic performance changes across questions
+  - Ensure all metrics are backed by observable conversation patterns
+  
+  **Expected Output Format**:
+  {
+    "overallScore": <integer 0-100>,
+    "communicationScore": <integer 0-100>,
+    "technicalKnowledgeScore": <integer 0-100>,
+    "problemSolvingScore": <integer 0-100>,
+    "radarChartData": {
+      "communicationClarity": <integer 0-100>,
+      "technicalKnowledge": <integer 0-100>,
+      "responseRelevance": <integer 0-100>,
+      "professionalVocabulary": <integer 0-100>,
+      "problemSolvingApproach": <integer 0-100>
+    },
+    "questionPerformance": {
+      "Q1": <integer 0-100>,
+      "Q2": <integer 0-100>,
+      "Q3": <integer 0-100>
+    },
+    "detailedMetrics": {
+      "responseCompleteness": <integer 0-10>,
+      "technicalVocabularyUsage": <integer 0-10>,
+      "answerRelevance": <integer 0-10>,
+      "explanationClarity": <integer 0-10>,
+      "exampleProvision": <integer 0-10>,
+      "professionalTone": <integer 0-10>,
+      "responseStructure": <integer 0-10>,
+      "domainKnowledge": <integer 0-10>
+    },
+    "performanceOverTime": {
+      "technicalAccuracy": [<int>, <int>, <int>],
+      "communicationClarity": [<int>, <int>, <int>],
+      "responseRelevance": [<int>, <int>, <int>],
+      "professionalVocabulary": [<int>, <int>, <int>]
+    },
+    "keywordsDetected": [<technical/professional keywords actually used by candidate>],
+    "strengths": [
+      <detailed strength with specific example from conversation>,
+      <detailed strength with specific example from conversation>,
+      <detailed strength with specific example from conversation>,
+      <detailed strength with specific example from conversation>
+    ],
+    "areasForImprovement": [
+      <detailed improvement area with specific recommendation and example>,
+      <detailed improvement area with specific recommendation and example>,
+      <detailed improvement area with specific recommendation and example>,
+      <detailed improvement area with specific recommendation and example>
+    ],
+    "hrInsights": {
+      "communicationStyleAssessment": <detailed assessment>,
+      "technicalCompetencyLevel": <junior/mid/senior level assessment with reasoning>,
+      "culturalFitIndicators": <assessment based on communication style and responses>,
+      "experienceLevelEstimation": <estimated years of experience with justification>,
+      "learningPotentialAssessment": <assessment of candidate's learning attitude>,
+      "redFlags": [<any concerning patterns or responses>],
+      "interviewReadinessScore": <integer 0-100>
+    },
+    "aiInterviewerNotes": <comprehensive professional summary with specific observations and recommendations for HR>
+  }
+    `;
+  
 
   const messages = [
     {
@@ -154,154 +271,13 @@ Provide specific examples from the conversation data to support your analysis. R
   }
 };
 
-export const getConversationAnalytics = async (appId: string) => {
-  try {
-    await connectDB();
-
-    // Fetch all conversations for the given appId
-    const conversations = await Conversation.find({ appId }).sort({
-      createdAt: 1,
-    });
-
-    if (!conversations || conversations.length === 0) {
-      throw new Error("No conversations found for this application");
-    }
-
-    // Process and prepare data for analysis
-    const processedData = conversations.map((conv: any, index: number) => {
-      const analysisData = conv.previousUserResponseAnalysis
-        ? JSON.parse(conv.previousUserResponseAnalysis)
-        : {};
-
-      return {
-        conversationId: conv._id,
-        questionNumber: index + 1,
-        question: conv.currentQuestion,
-        userResponse: conv.userResponse || "No response recorded",
-        analysis: analysisData,
-        timestamp: conv.createdAt,
-        timeTaken: conv.responseTime || null,
-      };
-    });
-
-    // Additional metadata for context
-    const interviewMetadata = {
-      totalQuestions: conversations.length,
-      interviewDuration:
-        conversations.length > 0
-          ? new Date(
-              (conversations[conversations.length - 1] as any).createdAt
-            ).getTime() -
-            new Date((conversations[0] as any).createdAt).getTime()
-          : 0,
-      completionRate:
-        (conversations.filter((c: any) => c.userResponse).length /
-          conversations.length) *
-        100,
-    };
-
-    const analyticsPayload = {
-      metadata: interviewMetadata,
-      conversations: processedData,
-      appId: appId,
-    };
-
-    // Convert ObjectId and other non-serializable fields to strings
-    const serializedData = JSON.parse(JSON.stringify(analyticsPayload));
-
-    const response = await chatOpenAI(serializedData);
-
-    // Parse the AI response
-    const aiAnalysis = JSON.parse(
-      response.choices[0].message.content as string
-    );
-
-    // Add some computed metrics
-    const enhancedAnalysis = {
-      ...aiAnalysis,
-      rawData: {
-        totalConversations: conversations.length,
-        analysisTimestamp: new Date().toISOString(),
-        appId: appId,
-      },
-      trends: calculateTrends(processedData),
-    };
-    console.log(enhancedAnalysis, "hello");
-    return enhancedAnalysis;
-  } catch (error) {
-    console.error("Error in getConversationAnalytics:", error);
-    throw error;
-  }
-};
-
-// Helper function to calculate trends across the interview
-const calculateTrends = (conversations: any[]) => {
-  const confidenceScores = conversations
-    .map((c) => c.analysis?.confidence || 0)
-    .filter((score) => score > 0);
-
-  const accuracyScores = conversations
-    .map((c) => c.analysis?.accuracy || 0)
-    .filter((score) => score > 0);
-
-  return {
-    confidenceTrend: calculateTrend(confidenceScores),
-    accuracyTrend: calculateTrend(accuracyScores),
-    averageConfidence:
-      confidenceScores.length > 0
-        ? confidenceScores.reduce((a, b) => a + b, 0) / confidenceScores.length
-        : 0,
-    averageAccuracy:
-      accuracyScores.length > 0
-        ? accuracyScores.reduce((a, b) => a + b, 0) / accuracyScores.length
-        : 0,
-  };
-};
-
-// Calculate if scores are improving, declining, or stable
-const calculateTrend = (scores: number[]) => {
-  if (scores.length < 2) return "insufficient_data";
-
-  const firstHalf = scores.slice(0, Math.floor(scores.length / 2));
-  const secondHalf = scores.slice(Math.floor(scores.length / 2));
-
-  const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-  const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-
-  const difference = secondAvg - firstAvg;
-
-  if (difference > 5) return "improving";
-  if (difference < -5) return "declining";
-  return "stable";
-};
-
-// Additional utility function to get analytics summary
-export const getAnalyticsSummary = async (appId: string) => {
-  try {
-    const fullAnalytics = await getConversationAnalytics(appId);
-
-    return {
-      overallScore: fullAnalytics.overallPerformance || 0,
-      recommendation:
-        fullAnalytics.hiringRecommendation?.finalRecommendation ||
-        "No recommendation",
-      keyStrengths: fullAnalytics.hiringRecommendation?.strengths || [],
-      improvementAreas:
-        fullAnalytics.hiringRecommendation?.areasForImprovement || [],
-      riskFactors: fullAnalytics.hiringRecommendation?.riskFactors || [],
-    };
-  } catch (error) {
-    console.error("Error in getAnalyticsSummary:", error);
-    throw error;
-  }
-};
-
 export const fetchAllConversations = async (appId: string) => {
   try {
     const conversations = await Conversation.find({
       appId: appId,
     });
     const serializeData = JSON.parse(JSON.stringify(conversations));
+    clg
     return {
       data: serializeData,
       error: null,
@@ -311,6 +287,73 @@ export const fetchAllConversations = async (appId: string) => {
     return {
       data: [],
       error: error,
+    };
+  }
+};
+
+export const getAnalyticsData = async (appId: string) => {
+  try {
+    // Step 1: Fetch all conversations
+    const { data: conversations, error: fetchError } = await fetchAllConversations(appId);
+    if (fetchError || !conversations || conversations.length === 0) {
+      throw new Error("No conversations found or error fetching conversations");
+    }
+
+    // Step 2: Format the conversation into a proper dialogue
+    let formattedConversation = [];
+    let questionCounter = 1;
+
+    for (let i = 0; i < conversations.length; i++) {
+      const entry = conversations[i];
+      
+      // Parse interviewer response safely
+      const interviewerData = safeJsonParse(entry.interviewerResponse);
+      const interviewerResponse = interviewerData?.aiResponse || "";
+      
+      // Parse candidate response safely
+      const candidateData = safeJsonParse(entry.candidateResponse);
+      const candidateResponse = candidateData?.candidateResponse || "";
+
+      // Add interviewer response with question number
+      if (interviewerResponse) {
+        formattedConversation.push({
+          speaker: "Interviewer",
+          message: interviewerResponse,
+          questionNumber: `Q${questionCounter}`
+        });
+        questionCounter++;
+      }
+
+      // Add candidate response if it exists, without question number
+      if (candidateResponse) {
+        formattedConversation.push({
+          speaker: "Candidate",
+          message: candidateResponse
+        });
+      }
+    }
+
+    // Step 3: Send the formatted conversation to chatOpenAI for analytics
+    const analyticsResponse = await chatOpenAI(formattedConversation);
+
+    // Step 4: Parse the response and return the analytics data
+    let analyticsData;
+    try {
+      analyticsData = JSON.parse(analyticsResponse.choices[0].message.content);
+    } catch (error) {
+      console.error("Error parsing analytics response:", error);
+      throw new Error("Invalid JSON response from AI: " + analyticsResponse.choices[0].message.content);
+    }
+
+    return {
+      data: { analyticsData, conversationsData: formattedConversation },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Error in getAnalyticsData:", error);
+    return {
+      data: null,
+      error: error.message || "Error generating analytics data",
     };
   }
 };
