@@ -2,27 +2,24 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import {
   MapPin,
   Briefcase,
   DollarSign,
   Clock,
   Users,
-  Code,
-  BarChart,
-  Languages,
   Building,
   Globe,
   Linkedin,
   Twitter,
+  Calendar,
 } from 'lucide-react';
 import { fetchJobDetails } from '@/lib/api-functions/home.api';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 
 // Define TypeScript interfaces based on Mongoose schemas
 interface Interviewer {
@@ -87,14 +84,18 @@ export interface Job {
   price: number;
   employerId: {
     companyDetails: CompanyDetails;
+    name: string;
+    email: string;
+    image: string;
   };
   paymentDetails: PaymentDetails;
   invitedCandidates: InvitedCandidate[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-
 const JobPage = () => {
-  const params = useParams()
+  const params = useParams();
   const id = params.id as string;
 
   const { data: job, isLoading, error } = useQuery({
@@ -130,287 +131,190 @@ const JobPage = () => {
     );
   }
 
+  const stripHtmlTags = (html: string) => {
+    return html.replace(/<[^>]*>/g, '');
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Header Section */}
-      <header className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center space-y-4">
-            {job.employerId.companyDetails.logo && (
-              <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-                <AvatarImage src={job.employerId.companyDetails.logo} alt={job.employerId.companyDetails.name} />
-              </Avatar>
-            )}
-            <h1 className="text-3xl md:text-4xl font-bold">{job.title}</h1>
-            <p className="text-lg">{job.employerId.companyDetails.name}</p>
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-5 h-5" />
-              <span>{job.location} ({job.workType})</span>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header with gradient */}
+      <div className="bgGrad h-42"></div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Job Overview */}
-        <section className="mb-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 leading-relaxed mb-4" dangerouslySetInnerHTML={{ __html: job.about }} />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Briefcase className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Job Type:</strong> {job.jobType}
-                  </span>
+      <div className="max-w-6xl mx-auto px-6 -mt-16 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Job Title and Company Info */}
+            <Card className="bg-white border-0 shadow-sm">
+              <CardContent className="p-8">
+                <div className="mb-4">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
+                  <div className="flex items-center gap-2 text-gray-600 mb-4">
+                    <span className="font-medium">{job.employerId.companyDetails.name}</span>
+                    <span>•</span>
+                    <span>{job.employerId.companyDetails.location}</span>
+                    <span>•</span>
+                    <span className="capitalize">{job.jobType}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={job.isActive ? 'default' : 'secondary'} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      {job.isActive ? 'Open Position' : 'Closed'}
+                    </Badge>
+                    <Badge variant="outline" className="border-gray-300 text-gray-600">
+                      {job.workType}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Salary:</strong> ${job.salaryRange.start.toLocaleString()} - ${job.salaryRange.end.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Experience:</strong> {job.workExperience} years
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <BarChart className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Status:</strong> {job.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+              </CardContent>
+            </Card>
 
-        {/* Tech Stack */}
-        {job.techStack.length > 0 && (
-          <section className="mb-12">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tech Stack</CardTitle>
-              </CardHeader>
-              <CardContent>
+            {/* Overview */}
+            <Card className="bg-white border-0 shadow-sm">
+              <CardContent className="p-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Overview</h2>
+                <p className="text-gray-700 leading-relaxed mb-6">{stripHtmlTags(job.about)}</p>
+
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">About {job.employerId.companyDetails.name}</h3>
+                  <p className="text-gray-700 leading-relaxed">{stripHtmlTags(job.employerId.companyDetails.about)}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-600">{job.employerId.companyDetails.numberOfEmployees} employees</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-600">{job.employerId.companyDetails.industryType}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Skills */}
+            <Card className="bg-white border-0 shadow-sm">
+              <CardContent className="p-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Skills</h2>
                 <div className="flex flex-wrap gap-2">
                   {job.techStack.map((tech, index) => (
-                    <Badge key={index} variant="secondary">
+                    <span key={index} className="px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full">
                       {tech}
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </section>
-        )}
+          </div>
 
-        {/* Interview Settings */}
-        <section className="mb-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Interview Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Max Candidates:</strong> {job.interviewSettings.maxCandidates}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Duration:</strong> {job.interviewSettings.interviewDuration} minutes
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <BarChart className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Difficulty:</strong> {job.interviewSettings.difficultyLevel}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Languages className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Language:</strong> {job.interviewSettings.language}
-                  </span>
-                </div>
-              </div>
-              {job.interviewSettings.interviewers.length > 0 && (
-                <>
-                  <Separator className="my-4" />
-                  <h3 className="text-lg font-medium">Interviewers</h3>
-                  <div className="space-y-2">
-                    {job.interviewSettings.interviewers.map((interviewer, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <Users className="w-5 h-5 text-gray-500" />
-                        <span>
-                          {interviewer.name} ({interviewer.gender}, {interviewer.qualification})
-                        </span>
-                      </div>
-                    ))}
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Job Details Card */}
+            <Card className="bg-white border-0 shadow-sm">
+              <CardContent className="p-6">
+                {/* Salary */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">{job.location}</span>
                   </div>
-                </>
-              )}
-              {job.interviewSettings.questions.length > 0 && (
-                <>
-                  <Separator className="my-4" />
-                  <h3 className="text-lg font-medium">Sample Questions</h3>
-                  <div className="space-y-2">
-                    {job.interviewSettings.questions.map((question, index) => (
-                      <div key={index} className="flex items-start space-x-2">
-                        <Code className="w-5 h-5 text-gray-500 mt-1" />
-                        <span>
-                          {question.text} <Badge>{question.type}</Badge>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </section>
+                  <div className="text-2xl font-bold text-gray-900">${job.salaryRange.start}k - ${job.salaryRange.end}k</div>
+                  <div className="text-sm text-gray-600">Avg. Salary</div>
+                </div>
 
-        {/* Company Details */}
-        <section className="mb-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Company Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Building className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>{job.employerId.companyDetails.name}</strong> - {job.employerId.companyDetails.tagline}
-                  </span>
-                </div>
-                <p className="text-gray-700" dangerouslySetInnerHTML={{ __html: job.employerId.companyDetails.about }} />
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-5 h-5 text-gray-500" />
-                  <span>{job.employerId.companyDetails.location}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-gray-500" />
-                  <span>{job.employerId.companyDetails.numberOfEmployees} employees</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Briefcase className="w-5 h-5 text-gray-500" />
-                  <span>
-                    {job.employerId.companyDetails.companyType} - {job.employerId.companyDetails.industryType}
-                  </span>
-                </div>
-                <div className="flex space-x-4">
-                  {job.employerId.companyDetails.website && (
-                    <Button variant="outline" asChild>
-                      <a href={job.employerId.companyDetails.website} target="_blank" rel="noopener noreferrer">
-                        <Globe className="w-4 h-4 mr-2" />
-                        Website
-                      </a>
-                    </Button>
-                  )}
-                  {job.employerId.companyDetails.linkedin && (
-                    <Button variant="outline" asChild>
-                      <a href={job.employerId.companyDetails.linkedin} target="_blank" rel="noopener noreferrer">
-                        <Linkedin className="w-4 h-4 mr-2" />
-                        LinkedIn
-                      </a>
-                    </Button>
-                  )}
-                  {job.employerId.companyDetails.x && (
-                    <Button variant="outline" asChild>
-                      <a href={job.employerId.companyDetails.x} target="_blank" rel="noopener noreferrer">
-                        <Twitter className="w-4 h-4 mr-2" />
-                        X
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Invited Candidates */}
-        {job.invitedCandidates.length > 0 && (
-          <section className="mb-12">
-            <Card>
-              <CardHeader>
-                <CardTitle>Invited Candidates</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {job.invitedCandidates.map((candidate, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <Users className="w-5 h-5 text-gray-500" />
-                      <span>
-                        {candidate.name} ({candidate.email})
-                      </span>
+                {/* Company */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <Building className="h-4 w-4 text-white" />
                     </div>
-                  ))}
+                    <div>
+                      <div className="font-medium text-gray-900">{job.employerId.companyDetails.name}</div>
+                      <div className="text-sm text-gray-600">{job.employerId.email}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Job Type */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-900">{job.jobType}</span>
+                  </div>
+                </div>
+
+                {/* Experience */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Briefcase className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-900">{job.workExperience} years experience</span>
+                  </div>
+                </div>
+
+                {/* Posted Date */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-900">{formatDate(job.createdAt)}</span>
+                  </div>
+                </div>
+
+                {/* Apply Button */}
+                <Link href={`/candidate/dashboard/jobs`}>
+                  <Button className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-medium">
+                  Apply for this job
+                </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Company Links */}
+            <Card className="bg-white border-0 shadow-sm">
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <a
+                    href={job.employerId.companyDetails.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Globe className="h-4 w-4" />
+                    <span className="text-sm">Learn more about us</span>
+                  </a>
+
+                  <a
+                    href={job.employerId.companyDetails.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Linkedin className="h-4 w-4" />
+                    <span className="text-sm">LinkedIn</span>
+                  </a>
+
+                  <a
+                    href={job.employerId.companyDetails.x}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Twitter className="h-4 w-4" />
+                    <span className="text-sm">Twitter</span>
+                  </a>
                 </div>
               </CardContent>
             </Card>
-          </section>
-        )}
-
-        {/* Payment Details */}
-        <section className="mb-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Price:</strong> ${job.price}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <BarChart className="w-5 h-5 text-gray-500" />
-                  <span>
-                    <strong>Status:</strong> {job.paymentDetails.status}
-                  </span>
-                </div>
-                {job.paymentDetails.transactionId && (
-                  <div className="flex items-center space-x-2">
-                    <Code className="w-5 h-5 text-gray-500" />
-                    <span>
-                      <strong>Transaction ID:</strong> {job.paymentDetails.transactionId}
-                    </span>
-                  </div>
-                )}
-                {job.paymentDetails.paidAt && (
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-5 h-5 text-gray-500" />
-                    <span>
-                      <strong>Paid At:</strong> {new Date(job.paymentDetails.paidAt).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-6">
-        <div className="container mx-auto px-4 text-center">
-          <p>© {new Date().getFullYear()} {job.employerId.companyDetails.name}. All rights reserved.</p>
+          </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 };
