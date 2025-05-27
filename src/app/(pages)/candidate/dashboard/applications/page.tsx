@@ -125,7 +125,8 @@ const Page = () => {
             <TableNex data={applications as any} keyField={{keyId:"jobId",isVisible:false}} responsive={true} columns={columns} />
           ) : (
             <div className="flex justify-center items-center py-12 text-center">
-              <div>
+              <div className='flex flex-col gap-2 items-center'>
+                <Image src="/no-app.png" alt="No applications found" width={250} height={250} />
                 <p className="text-gray-500 font-medium">No applications found</p>
                 <p className="text-gray-400 text-sm mt-1">
                   No {activeTab !== 'all' ? activeTab : ''} applications to display

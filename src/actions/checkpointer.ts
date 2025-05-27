@@ -28,7 +28,7 @@ export async function createConversation({
       throw new Error("You have not applied for this job");
     }
 
-    const parsedResponse = JSON.parse(interviewerResponse);
+    const parsedResponse = JSON.parse(JSON.stringify(interviewerResponse));
     // Create a new conversation
     const newConversation = await Conversation.create({
       appId: appId,

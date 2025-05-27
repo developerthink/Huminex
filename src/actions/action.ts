@@ -162,10 +162,6 @@ export const chatAction = async ({
       model: "gemma2-9b-it",
       messages,
       temperature: 0.7, 
-      max_tokens: 1500, 
-      top_p: 0.9,
-      frequency_penalty: 0.1, 
-      presence_penalty: 0.1,
     });
 
     const content = response.choices[0]?.message?.content;
@@ -174,6 +170,7 @@ export const chatAction = async ({
       throw new Error("No response content received from AI");
     }
     const cleanContent = content.replace(/^```json\s*|\s*```$/gm, "").trim();
+    console.log(cleanContent, content, "This is actual content");
     
     await createConversation({ appId: appData._id as string, interviewerResponse:cleanContent, candidateResponse:query});
 
