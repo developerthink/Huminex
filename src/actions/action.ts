@@ -115,7 +115,7 @@ export async function createJob(data: JobInput): Promise<CreateJobResponse> {
 
 const openai = new OpenAI({
   apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[0],
-  baseURL: "https://api.groq.com/openai/v1",
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
   timeout: 30000, // 30 second timeout (increased from 10s)
 });
 
@@ -136,7 +136,7 @@ export const chatAction = async ({
     }> = [
       {
         role: "system",
-        content:systemPrompt(appData)
+        content: systemPrompt(appData),
       },
     ];
 
@@ -159,9 +159,9 @@ export const chatAction = async ({
     //isEnding:
 
     const response = await openai.chat.completions.create({
-      model: "gemma2-9b-it",
+      model: "gemini-2.0-flash",
       messages,
-      temperature: 0.7, 
+      temperature: 0.7,
     });
 
     const content = response.choices[0]?.message?.content;
@@ -169,13 +169,24 @@ export const chatAction = async ({
     if (!content) {
       throw new Error("No response content received from AI");
     }
-    const cleanContent = content.replace(/^```json\s*|\s*```$/gm, "").trim();
+    const cleanContent = content
+      .replace(/^```json\s*|\s*```$/gm, "")
+      .replace(/^```.*$/gm, "")
+      .trim();
     console.log(cleanContent, content, "This is actual content");
-    
-    await createConversation({ appId: appData._id as string, interviewerResponse:cleanContent, candidateResponse:query});
-
+    await createConversation({
+      appId: appData._id as string,
+      interviewerResponse: cleanContent
+        .replace(/^```json\s*|\s*```$/gm, "")
+        .replace(/^```.*$/gm, "")
+        .trim(),
+      candidateResponse: query,
+    });
     return {
-      data: cleanContent,
+      data: cleanContent
+        .replace(/^```json\s*|\s*```$/gm, "")
+        .replace(/^```.*$/gm, "")
+        .trim(),
       error: null,
     };
   } catch (error) {
@@ -334,7 +345,7 @@ export async function pdfExtractChat(
   try {
     const openai = new OpenAI({
       apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[0],
-      baseURL: "https://api.groq.com/openai/v1",
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     });
 
     const messages = [
@@ -407,7 +418,7 @@ Analyze the provided resume content carefully and return the JSON object matchin
     ];
 
     const response = await openai.chat.completions.create({
-      model: "gemma2-9b-it",
+      model: "gemini-2.0-flash",
       messages: messages as any,
       response_format: {
         type: "json_object",

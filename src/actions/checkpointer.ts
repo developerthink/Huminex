@@ -67,7 +67,7 @@ export const getApplicationDetails = async (appId: string) => {
     if (!application) {
       throw new Error("Application not found");
     }
-    console.log(application);
+    // console.log(application);
     // Convert ObjectId and other non-serializable fields to strings
     const serializedData = JSON.parse(JSON.stringify(application));
     return serializedData;
@@ -90,7 +90,7 @@ const safeJsonParse = (jsonString: string): any => {
 
 const openai = new OpenAI({
   apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[0],
-  baseURL: "https://api.groq.com/openai/v1",
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
   timeout: 10000, // 10 second timeout
 });
 
@@ -257,7 +257,7 @@ const chatOpenAI = async (analyticsData: any) => {
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gemma2-9b-it",
+      model: "gemini-2.0-flash",
       messages: messages as any,
       response_format: { type: "json_object" },
       temperature: 0.3, // Lower temperature for more consistent analysis
