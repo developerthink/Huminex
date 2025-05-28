@@ -28,14 +28,18 @@ export async function createConversation({
       throw new Error("You have not applied for this job");
     }
 
-    const parsedResponse = JSON.parse(JSON.stringify(interviewerResponse));
+    const parsedResponse = JSON.parse(interviewerResponse);
     // Create a new conversation
     const newConversation = await Conversation.create({
       appId: appId,
       interviewerResponse: interviewerResponse,
       candidateResponse: candidateResponse,
     });
-
+    console.log(
+      parsedResponse,
+      "This is parsed response",
+      parsedResponse.isEnded
+    );
     if (parsedResponse.isEnded) {
       await Application.findByIdAndUpdate(appId, {
         interviewstatus: "COMPLETED",
@@ -101,7 +105,7 @@ const chatOpenAI = async (analyticsData: any) => {
     // Parse interviewer response
     const interviewerData = safeJsonParse(entry.interviewerResponse);
     const interviewerResponse = interviewerData?.aiResponse || "";
-    
+
     // Parse candidate response
     const candidateData = safeJsonParse(entry.candidateResponse);
     const candidateResponse = candidateData?.candidateResponse || "";
@@ -240,7 +244,6 @@ const chatOpenAI = async (analyticsData: any) => {
     "aiInterviewerNotes": <comprehensive professional summary with specific observations and recommendations for HR>
   }
     `;
-  
 
   const messages = [
     {
@@ -292,7 +295,8 @@ export const fetchAllConversations = async (appId: string) => {
 export const getAnalyticsData = async (appId: string) => {
   try {
     // Step 1: Fetch all conversations
-    const { data: conversations, error: fetchError } = await fetchAllConversations(appId);
+    const { data: conversations, error: fetchError } =
+      await fetchAllConversations(appId);
     if (fetchError || !conversations || conversations.length === 0) {
       throw new Error("No conversations found or error fetching conversations");
     }
@@ -301,11 +305,11 @@ export const getAnalyticsData = async (appId: string) => {
     let formattedConversation = [];
     for (let i = 0; i < conversations.length; i++) {
       const entry = conversations[i];
-      
+
       // Parse interviewer response safely
       const interviewerData = safeJsonParse(entry.interviewerResponse);
       const interviewerResponse = interviewerData?.aiResponse || "";
-      
+
       // Parse candidate response safely
       const candidateData = safeJsonParse(entry.candidateResponse);
       const candidateResponse = candidateData?.candidateResponse || "";
@@ -314,7 +318,7 @@ export const getAnalyticsData = async (appId: string) => {
       formattedConversation.push({
         speaker: "Interviewer",
         message: interviewerResponse,
-        questionNumber: `Q${i + 1}` // Label questions as Q1, Q2, etc.
+        questionNumber: `Q${i + 1}`, // Label questions as Q1, Q2, etc.
       });
 
       // Add candidate response if it exists
@@ -332,14 +336,19 @@ export const getAnalyticsData = async (appId: string) => {
     // Step 4: Parse the response and return the analytics data
     let analyticsData;
     try {
-      analyticsData = JSON.parse(analyticsResponse.choices[0].message.content || "{}");
+      analyticsData = JSON.parse(
+        analyticsResponse.choices[0].message.content || "{}"
+      );
     } catch (error) {
       console.error("Error parsing analytics response:", error);
-      throw new Error("Invalid JSON response from AI: " + analyticsResponse.choices[0].message.content);
+      throw new Error(
+        "Invalid JSON response from AI: " +
+          analyticsResponse.choices[0].message.content
+      );
     }
 
     return {
-      data: {analyticsData, conversationsData:formattedConversation},
+      data: { analyticsData, conversationsData: formattedConversation },
       error: null,
     };
   } catch (error) {

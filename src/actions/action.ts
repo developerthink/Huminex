@@ -141,12 +141,13 @@ export const chatAction = async ({
     ];
 
     // Add context messages
-    context.forEach((msg) => {
-      messages.push({
-        role: msg.role === "user" ? "user" : "assistant",
-        content: msg.content,
+    context.length > 0 &&
+      context.forEach((msg) => {
+        messages.push({
+          role: msg.role === "user" ? "user" : "assistant",
+          content: msg.content,
+        });
       });
-    });
 
     // Add current query if provided
     if (query && query.trim()) {
