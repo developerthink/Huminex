@@ -181,14 +181,19 @@ export default function RecruitmentDashboard() {
       accessor: 'Analytics',
       header: 'Interview analytics',
       render: (_: any, row: any) => (
-        <Link
-          href={`/interview/${row._id}/analytics`}
-        >
-          <Button variant="outline">
+        row.interviewStatus === 'PENDING' ? (
+          <Button variant="outline" disabled>
             <BarChart className="h-4 w-4" />
-            View Analytics
+            PENDING
           </Button>
-        </Link>
+        ) : (
+          <Link href={`/interview/${row.id}/analytics`}>
+            <Button variant="outline">
+              <BarChart className="h-4 w-4" />
+              View Analytics
+            </Button>
+          </Link>
+        )
       ),
     },
     {
@@ -196,13 +201,12 @@ export default function RecruitmentDashboard() {
       header: 'Interview Status',
       render: (_: any, row: any) => (
         <h3
-          className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${
-            row.interviewStatus === 'PENDING'
+          className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${row.interviewStatus === 'PENDING'
               ? 'text-yellow-500 bg-yellow-500/30'
               : row.interviewStatus === 'COMPLETED'
-              ? 'text-green-500 bg-green-500/30'
-              : 'text-red-500 bg-red-500/30'
-          }`}
+                ? 'text-green-500 bg-green-500/30'
+                : 'text-red-500 bg-red-500/30'
+            }`}
         >
           {row.interviewStatus}
         </h3>
@@ -223,13 +227,12 @@ export default function RecruitmentDashboard() {
               onValueChange={(value: HiringStatus) => updateStatusMutation.mutate({ applicationId: row.id, status: value })}
             >
               <SelectTrigger
-                className={` !border-none !outline-none !select-none !px-4 ${
-                  row.hiringStatus === 'PENDING'
+                className={` !border-none !outline-none !select-none !px-4 ${row.hiringStatus === 'PENDING'
                     ? 'bg-yellow-100 text-yellow-700 border-yellow-700'
                     : row.hiringStatus === 'HIRED'
-                    ? 'bg-green-100 text-green-700 border-green-700'
-                    : 'bg-red-100 text-red-700 border-red-700'
-                }`}
+                      ? 'bg-green-100 text-green-700 border-green-700'
+                      : 'bg-red-100 text-red-700 border-red-700'
+                  }`}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -256,13 +259,20 @@ export default function RecruitmentDashboard() {
             </PopoverTrigger>
             <PopoverContent className="w-40 p-2">
               <div className="flex flex-col gap-2">
-                <Link
-                  href={`/interview/${row._id}/analytics`}
-                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
-                >
-                  <BarChart className="h-4 w-4" />
-                  View Analytics
-                </Link>
+                {row.interviewStatus === 'PENDING' ? (
+                  <div className="flex items-center gap-2 px-2 py-1.5 text-gray-400 rounded-md w-full text-left text-sm">
+                    <BarChart className="h-4 w-4" />
+                    View Analytics
+                  </div>
+                ) : (
+                  <Link
+                    href={`/interview/${row.id}/analytics`}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                  >
+                    <BarChart className="h-4 w-4" />
+                    View Analytics
+                  </Link>
+                )}
                 <Link
                   href={`/candidates/${row.candidateId}`}
                   className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
@@ -291,7 +301,7 @@ export default function RecruitmentDashboard() {
   ];
 
   const applicationTableData = analyticsData?.data?.recentApplications?.map((app: any) => ({
-    _id: app._id,
+    id: app._id,
     jobId: app.jobId,
     jobTitle: app.job.title,
     candidateId: app.candidateId,
@@ -304,7 +314,7 @@ export default function RecruitmentDashboard() {
 
   if (isLoading) {
     return (
-      <WbLoader/>
+      <WbLoader />
     );
   }
 
@@ -370,13 +380,12 @@ export default function RecruitmentDashboard() {
               header: 'Difficulty Level',
               render: (_: any, row: any) => (
                 <h3
-                  className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${
-                    row.difficultyLevel === 'easy'
+                  className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${row.difficultyLevel === 'easy'
                       ? 'text-green-500 bg-green-500/30'
                       : row.difficultyLevel === 'medium'
-                      ? 'bg-yellow-500/30 text-yellow-500'
-                      : 'bg-red-500/30 text-red-500'
-                  }`}
+                        ? 'bg-yellow-500/30 text-yellow-500'
+                        : 'bg-red-500/30 text-red-500'
+                    }`}
                 >
                   {row.difficultyLevel}
                 </h3>

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import React from "react";
 import TableNex from "react-tablenex";
 import "react-tablenex/style.css";
@@ -8,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash, FileText, Users } from "lucide-react";
 import CreateJob from "@/components/employer-cmp/create-job";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import axios from "axios";
@@ -32,21 +32,18 @@ const deleteJob = async (jobId: string) => {
 const page = () => {
   interface TableJobType {
     id: string;
-    jobTitle: string;
+    jobTitle: React.ReactNode;
     jobType: string;
     location: string;
     ctcRange: string;
     workExperience: number;
-    openings: number;
     interviewDuration: number;
     difficultyLevel: string;
-    techStack: string[];
     actions: React.ReactNode;
   }
 
   const queryClient = useQueryClient();
   const [tableData, setTableData] = useState<any[]>([]);
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
 
@@ -83,10 +80,8 @@ const page = () => {
         location: job.location,
         ctcRange: `${job.salaryRange.start} - ${job.salaryRange.end} LPA`,
         workExperience: job.workExperience,
-        openings: job.interviewSettings.maxCandidates,
         interviewDuration: job.interviewSettings.interviewDuration,
         difficultyLevel: job.interviewSettings.difficultyLevel,
-        techStack: job.techStack,
         actions: (
           <div className="flex items-center justify-center">
             <Popover>
@@ -98,14 +93,28 @@ const page = () => {
               <PopoverContent className="w-40 p-2">
                 <div className="flex flex-col gap-2">
                   <button
-                    onClick={() => handleEdit(job)}
+                    onClick={() => setEditingJobId(job._id)}
                     className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                   >
                     <Pencil className="h-4 w-4" />
                     Edit
                   </button>
+                  <Link
+                    href={`/jobs/${job._id}`}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                  >
+                    <FileText className="h-4 w-4" />
+                    View Job
+                  </Link>
+                  <Link
+                    href={`/employer/dashboard/jobs/applications/${job._id}`}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                  >
+                    <Users className="h-4 w-4" />
+                    View Applicants
+                  </Link>
                   <button
-                    onClick={() => handleDelete(job._id)}
+                    onClick={() => setDeleteJobId(job._id)}
                     className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm text-red-600"
                   >
                     <Trash className="h-4 w-4" />
@@ -121,6 +130,7 @@ const page = () => {
               onOpenChange={(open) => !open && setEditingJobId(null)}
               onSubmit={() => {
                 setEditingJobId(null);
+                queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
               }}
             />
           </div>
@@ -129,24 +139,10 @@ const page = () => {
       }));
       setTableData(tableData);
     }
-  }, [jobs]);
-
-  const handleEdit = (job: JobType) => {
-    console.log("job on edit", job);
-    setEditingJobId(job._id);
-  };
-
-  const handleDelete = (jobId: string) => {
-    setDeleteJobId(jobId);
-  };
-
-  const confirmDelete = () => {
-    if (!deleteJobId) return;
-    deleteMutation.mutate(deleteJobId);
-  };
+  }, [jobs, queryClient]);
 
   const customColumns = [
-    { accessor: "id", header: "Job ID" },
+    { accessor: "id", header: "Job ID", isVisible: false },
     {
       accessor: "jobTitle",
       header: (
@@ -167,28 +163,46 @@ const page = () => {
         </div>
       ),
     },
-    { accessor: "ctcRange", header: "CTC Range",
-        render: (_: any, row: any) => (
-          <h3 className="text-nowrap italic">{row.ctcRange}</h3>
-        ),
+    {
+      accessor: "ctcRange",
+      header: "CTC Range",
+      render: (_: any, row: any) => (
+        <h3 className="text-nowrap italic">{row.ctcRange}</h3>
+      ),
     },
-    { accessor: "workExperience", header: "Work Exp",
+    {
+      accessor: "workExperience",
+      header: "Work Exp",
       render: (_: any, row: any) => (
         <h3>{row.workExperience} yrs</h3>
       ),
     },
-    { accessor: "interviewDuration", header: "Duration",
-        render: (_: any, row: any) => (
-          <h3>{row.interviewDuration} min</h3>
-        ),
+    {
+      accessor: "interviewDuration",
+      header: "Duration",
+      render: (_: any, row: any) => (
+        <h3>{row.interviewDuration} min</h3>
+      ),
     },
-    { accessor: "difficultyLevel", header: "Difficulty Level",
-        render: (_: any, row: any) => (
-          <h3 className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${row.difficultyLevel === "easy" ? "text-green-500 bg-green-500/30" : row.difficultyLevel === "medium" ? "bg-yellow-500/30 text-yellow-500" : "bg-red-500/30 text-red-500"}`}>{row.difficultyLevel}</h3>
-        ),
+    {
+      accessor: "difficultyLevel",
+      header: "Difficulty Level",
+      render: (_: any, row: any) => (
+        <h3
+          className={`text-nowrap rounded-full px-2 py-0.5 text-sm uppercase ${
+            row.difficultyLevel === "easy"
+              ? "text-green-500 bg-green-500/30"
+              : row.difficultyLevel === "medium"
+              ? "bg-yellow-500/30 text-yellow-500"
+              : "bg-red-500/30 text-red-500"
+          }`}
+        >
+          {row.difficultyLevel}
+        </h3>
+      ),
     },
-    { 
-      accessor: "actions", 
+    {
+      accessor: "actions",
       header: "Actions",
       render: (_: any, row: any) => (
         <div className="flex items-center justify-center">
@@ -201,14 +215,28 @@ const page = () => {
             <PopoverContent className="w-40 p-2">
               <div className="flex flex-col gap-2">
                 <button
-                  onClick={() => handleEdit(row)}
+                  onClick={() => setEditingJobId(row.id)}
                   className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                 >
                   <Pencil className="h-4 w-4" />
                   Edit
                 </button>
+                <Link
+                  href={`/jobs/${row.id}`}
+                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                >
+                  <FileText className="h-4 w-4" />
+                  View Job
+                </Link>
+                <Link
+                  href={`/employer/dashboard/jobs/applications/${row.id}`}
+                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                >
+                  <Users className="h-4 w-4" />
+                  View Applicants
+                </Link>
                 <button
-                  onClick={() => handleDelete(row.id)}
+                  onClick={() => setDeleteJobId(row.id)}
                   className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm text-red-600"
                 >
                   <Trash className="h-4 w-4" />
@@ -224,6 +252,7 @@ const page = () => {
             onOpenChange={(open) => !open && setEditingJobId(null)}
             onSubmit={() => {
               setEditingJobId(null);
+              queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
             }}
           />
         </div>
@@ -231,29 +260,14 @@ const page = () => {
     },
   ];
 
-  const handleInviteCandidate = (jobId: string) => {
-    console.log(`Inviting candidate for job ${jobId}`);
-    setActiveMenu(null);
-  };
-
-  const handleDeleteJob = (jobId: string) => {
-    console.log(`Deleting job ${jobId}`);
-    setActiveMenu(null);
-  };
-
-  const toggleMenu = (jobId: string) => {
-    setActiveMenu(activeMenu === jobId ? null : jobId);
-  };
-
-  // if (isLoading) {
-  //   return <WbLoader />;
-  // }
-
   if (error) {
     return (
       <div className="gap-2 p-8 grid place-items-baseline w-full">
         <h1 className="text-2xl font-bold">All Jobs</h1>
-        <p className="text-sm text-red-500 flex flex-col gap-2"><MdErrorOutline className='w-8 h-8' />{error?.message || 'Error loading jobs'}</p>
+        <p className="text-sm text-red-500 flex flex-col gap-2">
+          <MdErrorOutline className='w-8 h-8' />
+          {error?.message || 'Error loading jobs'}
+        </p>
       </div>
     );
   }
@@ -262,7 +276,7 @@ const page = () => {
     <div className="mt-5 jobList">
       <div className="flex flex-col w-full gap-2 p-8 bgGrad text-white rounded-xl">
         <h1 className="text-2xl font-bold">All Jobs</h1>
-        <p className="text-sm ">Manage all jobs here</p>
+        <p className="text-sm">Manage all jobs here</p>
       </div>
       <br />
       <TableNex
@@ -302,7 +316,7 @@ const page = () => {
               Cancel
             </button>
             <button
-              onClick={confirmDelete}
+              onClick={() => deleteMutation.mutate(deleteJobId!)}
               disabled={deleteMutation.isPending}
               className="ml-3 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
