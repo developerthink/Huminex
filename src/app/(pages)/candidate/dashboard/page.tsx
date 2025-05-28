@@ -127,14 +127,14 @@ const Dashboard = () => {
       accessor: "status",
       render: (_: any, row: any) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${row.status === "PENDING"
+          className={`px-2 py-1 rounded-full text-xs ${row.hiringStatus === "PENDING"
               ? "bg-yellow-100 text-yellow-800"
-              : row.status === "ACCEPTED"
+              : row.hiringStatus === "HIRED"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
             }`}
         >
-          {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+          {row.hiringStatus.charAt(0).toUpperCase() + row.hiringStatus.slice(1)}
         </span>
       ),
     },
@@ -226,7 +226,7 @@ const Dashboard = () => {
                               <ClipboardCheck className="w-4 h-4 text-green-500" />
                             </div>
                             <span className="text-gray-700">
-                              All profile sections complete!
+                              All profile sections completed!
                             </span>
                           </li>
                         )}

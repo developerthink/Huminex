@@ -3,18 +3,19 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEmployerAnalytics } from '@/lib/api-functions/employer/analytics.api';
 import { updateHiringStatus } from '@/lib/api-functions/employer/job-response.api';
-import { Clipboard, MoreHorizontal, Pencil, Trash } from 'lucide-react';
+import { Clipboard, MoreHorizontal, Pencil, Trash, FileText, Users, BarChart, User } from 'lucide-react';
 import TableNex from 'react-tablenex';
 import 'react-tablenex/style.css';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import Link from 'next/link';
-import WbLoader from '@/components/global-cmp/wbLoader';
-import CreateJob from '@/components/employer-cmp/create-job';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import axios from 'axios';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import CreateJob from '@/components/employer-cmp/create-job';
+import WbLoader from '@/components/global-cmp/wbLoader';
+import { Button } from '@/components/ui/button';
 
 type HiringStatus = 'PENDING' | 'HIRED' | 'REJECTED';
 type TableData = Record<string, any>;
@@ -65,12 +66,13 @@ export default function RecruitmentDashboard() {
         return;
       }
       toast.success('Job deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['emp-jobs', 'employerAnalytics'] });
+      queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['employerAnalytics'] });
       setDeleteJobId(null);
     },
     onError: (error: any) => {
       console.error('Error deleting job:', error);
-      toast.error('Failed to delete job');
+      toast.error(error.response.data.error || 'Failed to delete job');
       setDeleteJobId(null);
     },
   });
@@ -81,6 +83,7 @@ export default function RecruitmentDashboard() {
     onSuccess: () => {
       toast.success('Status updated successfully');
       queryClient.invalidateQueries({ queryKey: ['jobResponses'] });
+      queryClient.invalidateQueries({ queryKey: ['employerAnalytics'] });
     },
     onError: (error: any) => {
       console.error('Error updating status:', error);
@@ -118,6 +121,20 @@ export default function RecruitmentDashboard() {
                     <Pencil className="h-4 w-4" />
                     Edit
                   </button>
+                  <Link
+                    href={`/employer/dashboard/jobs/${job._id}`}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                  >
+                    <FileText className="h-4 w-4" />
+                    View Job
+                  </Link>
+                  <Link
+                    href={`/employer/dashboard/jobs/applications/${job._id}`}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                  >
+                    <Users className="h-4 w-4" />
+                    View Applicants
+                  </Link>
                   <button
                     onClick={() => setDeleteJobId(job._id)}
                     className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm text-red-600"
@@ -135,7 +152,6 @@ export default function RecruitmentDashboard() {
               onOpenChange={(open) => !open && setEditingJobId(null)}
               onSubmit={() => {
                 setEditingJobId(null);
-                queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
               }}
             />
           </div>
@@ -182,19 +198,49 @@ export default function RecruitmentDashboard() {
       accessor: 'hiringStatus',
       header: 'Hiring Status',
       render: (_: any, row: any) => (
-        <Select
-          defaultValue={row.hiringStatus}
-          onValueChange={(value: HiringStatus) => updateStatusMutation.mutate({ applicationId: row.id, status: value })}
+        <div className="relative">
+          {updateStatusMutation.isPending && updateStatusMutation.variables?.applicationId === row.id ? (
+            <div className="flex justify-center items-center w-32 h-10">
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-600"></div>
+            </div>
+          ) : (
+            <Select
+              value={row.hiringStatus}
+              onValueChange={(value: HiringStatus) => updateStatusMutation.mutate({ applicationId: row.id, status: value })}
+            >
+              <SelectTrigger
+                className={` !border-none !outline-none !select-none !px-4 ${
+                  row.hiringStatus === 'PENDING'
+                    ? 'bg-yellow-100 text-yellow-700 border-yellow-700'
+                    : row.hiringStatus === 'HIRED'
+                    ? 'bg-green-100 text-green-700 border-green-700'
+                    : 'bg-red-100 text-red-700 border-red-700'
+                }`}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PENDING" className="">Pending</SelectItem>
+                <SelectItem value="HIRED" className="">Hired</SelectItem>
+                <SelectItem value="REJECTED" className="">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessor: 'Analytics',
+      header: 'Interview analytics',
+      render: (_: any, row: any) => (
+        <Link
+          href={`/employer/dashboard/jobs/applications/${row.jobId}`}
         >
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="HIRED">Hired</SelectItem>
-            <SelectItem value="REJECTED">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
+          <Button variant="outline">
+            <BarChart className="h-4 w-4" />
+            View Analytics
+          </Button>
+        </Link>
       ),
     },
     {
@@ -206,9 +252,40 @@ export default function RecruitmentDashboard() {
       accessor: 'actions',
       header: 'Actions',
       render: (_: any, row: any) => (
-        <Link href={`/employer/dashboard/jobs/analytics/${row.jobId}`} className="text-primary hover:underline">
-          View Analytics
-        </Link>
+        <div className="flex items-center justify-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 hover:bg-gray-100 rounded-full">
+                <MoreHorizontal className="h-5 w-5 text-gray-500" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-2">
+              <div className="flex flex-col gap-2">
+                <Link
+                  href={`/employer/dashboard/jobs/analytics/${row.jobId}`}
+                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                >
+                  <BarChart className="h-4 w-4" />
+                  View Analytics
+                </Link>
+                <Link
+                  href={`/employer/dashboard/candidates/${row.id}`}
+                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                >
+                  <User className="h-4 w-4" />
+                  View Candidate
+                </Link>
+                <Link
+                  href={`/employer/dashboard/jobs/${row.jobId}`}
+                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                >
+                  <FileText className="h-4 w-4" />
+                  View Job
+                </Link>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       ),
     },
   ];
@@ -225,7 +302,9 @@ export default function RecruitmentDashboard() {
   })) || [];
 
   if (isLoading) {
-    return <WbLoader />;
+    return (
+      <WbLoader/>
+    );
   }
 
   const { jobsCount, applicationStats } = analyticsData.data;
@@ -322,6 +401,20 @@ export default function RecruitmentDashboard() {
                           <Pencil className="h-4 w-4" />
                           Edit
                         </button>
+                        <Link
+                          href={`/employer/dashboard/jobs/${row.id}`}
+                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                        >
+                          <FileText className="h-4 w-4" />
+                          View Job
+                        </Link>
+                        <Link
+                          href={`/employer/dashboard/jobs/applications/${row.id}`}
+                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
+                        >
+                          <Users className="h-4 w-4" />
+                          View Applicants
+                        </Link>
                         <button
                           onClick={() => setDeleteJobId(row.id)}
                           className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm text-red-600"
@@ -354,7 +447,11 @@ export default function RecruitmentDashboard() {
             PRIMARY: 'var(--background)',
             SECONDARY: '#F5F7F6',
           }}
-          noDataMessage={isLoading ? <WbLoader /> : 'No jobs found'}
+          noDataMessage={isLoading ? (
+            <div className="flex justify-center items-center h-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-red-600"></div>
+            </div>
+          ) : 'No jobs found'}
           data={tableData || []}
         />
 
@@ -369,12 +466,16 @@ export default function RecruitmentDashboard() {
             PRIMARY: 'var(--background)',
             SECONDARY: '#F5F7F6',
           }}
-          noDataMessage={isLoading ? <WbLoader /> : 'No job applicants found'}
+          noDataMessage={isLoading ? (
+            <div className="flex justify-center items-center h-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-red-600"></div>
+            </div>
+          ) : 'No job applicants found'}
           data={applicationTableData}
         />
 
         <Dialog open={!!deleteJobId} onOpenChange={(open) => !open && setDeleteJobId(null)}>
-          <DialogContent>
+          <DialogContent className='w-fit'>
             <DialogHeader>
               <DialogTitle>Confirm Delete</DialogTitle>
               <DialogDescription>Are you sure you want to delete this job? This action cannot be undone.</DialogDescription>
@@ -387,9 +488,13 @@ export default function RecruitmentDashboard() {
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-red-600 text-white rounded-md"
+                className="px-4 py-2 bg-red-600 text-white rounded-md flex items-center gap-2"
                 onClick={() => deleteMutation.mutate(deleteJobId!)}
+                disabled={deleteMutation.isPending}
               >
+                {deleteMutation.isPending && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                )}
                 Delete
               </button>
             </DialogFooter>

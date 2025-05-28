@@ -27,7 +27,9 @@ const JobResponsePage = () => {
       updateHiringStatus(applicationId, status),
     onSuccess: () => {
       toast.success('Status updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['jobResponses','employerAnalytics'] });
+      queryClient.invalidateQueries({ queryKey: ['jobResponses'] });
+      queryClient.invalidateQueries({ queryKey: ['employerAnalytics'] });
+
     },
   });
 

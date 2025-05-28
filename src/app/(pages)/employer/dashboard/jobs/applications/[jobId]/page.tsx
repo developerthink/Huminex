@@ -31,7 +31,9 @@ const JobDetailsPage = () => {
       updateHiringStatus(applicationId, status),
     onSuccess: () => {
       toast.success('Status updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['jobApplications', jobId,'employerAnalytics', 'jobResponses'] });
+      queryClient.invalidateQueries({ queryKey: ['jobApplications', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['jobResponses'] });
+      queryClient.invalidateQueries({ queryKey: ['employerAnalytics'] });
     },
   });
 
@@ -48,7 +50,7 @@ const JobDetailsPage = () => {
       'Interview Status': item.interviewStatus || 'Not Started',
       'Status': (
         <Select
-          defaultValue={item.status || 'PENDING'}
+          defaultValue={item.hiringStatus || 'PENDING'}
           onValueChange={(value: HiringStatus) => handleStatusChange(item._id, value)}
         >
           <SelectTrigger className="w-32">
@@ -66,9 +68,9 @@ const JobDetailsPage = () => {
 
   const tableData = applicationsData?.data ? formatData(applicationsData.data) : [];
 
-  if (!applicationsData?.data?.length) {
-    return <div className="flex items-center justify-center h-96">No applications found for this job</div>;
-  }
+  // if (!applicationsData?.data?.length) {
+  //   return <div className="flex items-center justify-center h-96">No applications found for this job</div>;
+  // }
 
   return (
     <div className="mt-5 ">

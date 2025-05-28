@@ -126,6 +126,10 @@ const EditProfileForm = () => {
         },
       });
 
+
+      console.log("response during setup profile of employer", response);
+
+
       if (response.data) {
         router.push("/employer/dashboard");
       }

@@ -7,6 +7,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { fetchApplications } from '@/lib/api-functions/home.api';
 import WbLoader from '@/components/global-cmp/wbLoader';
+import Link from 'next/link';
+import { ClipboardList } from 'lucide-react';
 
 export type ApplicationType = {
   jobId: string;
@@ -40,7 +42,7 @@ const Page = () => {
     {
       header: 'Company',
       accessor: 'company',
-      render: (_:any,row: any) => (
+      render: (_: any, row: any) => (
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 relative">
             <Image
@@ -57,44 +59,43 @@ const Page = () => {
     {
       header: 'Job Title',
       accessor: 'title',
-      render: (_:any,row: any) => row.title.charAt(0).toUpperCase() + row.title.slice(1),
+      render: (_: any, row: any) => row.title.charAt(0).toUpperCase() + row.title.slice(1),
     },
     {
       header: 'Location',
       accessor: 'location',
-      render: (_:any,row: any) => row.location.charAt(0).toUpperCase() + row.location.slice(1),
+      render: (_: any, row: any) => row.location.charAt(0).toUpperCase() + row.location.slice(1),
     },
     {
       header: 'Job Type',
       accessor: 'jobType',
-      render: (_:any,row: any) => row.jobType.charAt(0).toUpperCase() + row.jobType.slice(1),
+      render: (_: any, row: any) => row.jobType.charAt(0).toUpperCase() + row.jobType.slice(1),
     },
     {
       header: 'Status',
       accessor: 'status',
-      render: (_:any,row: any) => (
+      render: (_: any, row: any) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            row.status === 'PENDING'
+          className={`px-2 py-1 rounded-full text-xs ${row.hiringStatus === 'PENDING'
               ? 'bg-yellow-100 text-yellow-800'
-              : row.status === 'ACCEPTED'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-          }`}
+              : row.hiringStatus === 'HIRED'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
         >
-          {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+          {row.hiringStatus.charAt(0).toUpperCase() + row.hiringStatus.slice(1)}
         </span>
       ),
     },
     {
       header: 'Applied Date',
       accessor: 'appliedDate',
-      render: (_:any,row: any) => row.appliedDate.charAt(0).toUpperCase() + row.appliedDate.slice(1),
+      render: (_: any, row: any) => row.appliedDate.charAt(0).toUpperCase() + row.appliedDate.slice(1),
     },
   ];
 
-  if(isLoading){
-    return <WbLoader/>
+  if (isLoading) {
+    return <WbLoader />
   }
 
   return (
@@ -122,11 +123,27 @@ const Page = () => {
               <p className="text-red-500">Failed to fetch applications</p>
             </div>
           ) : applications && applications?.length > 0 ? (
-            <TableNex data={applications as any} keyField={{keyId:"jobId",isVisible:false}} responsive={true} columns={columns} />
+            <TableNex 
+                data={applications || []}
+                noDataMessage={
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <ClipboardList className=" wszelkie-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500">No recent applications</p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Your scheduled applications will appear here
+                    </p>
+                  </div>
+                } 
+                keyField={{ keyId: "jobId", isVisible: false }} 
+                responsive={true} columns={columns} 
+                colorScheme={{
+                  ACCENT: "var(--primary)",
+                }}/>
           ) : (
             <div className="flex justify-center items-center py-12 text-center">
-              <div className='flex flex-col gap-2 items-center'>
-                <Image src="/no-app.png" alt="No applications found" width={250} height={250} />
+              <div>
                 <p className="text-gray-500 font-medium">No applications found</p>
                 <p className="text-gray-400 text-sm mt-1">
                   No {activeTab !== 'all' ? activeTab : ''} applications to display
