@@ -122,14 +122,14 @@ export default function RecruitmentDashboard() {
                     Edit
                   </button>
                   <Link
-                    href={`/employer/dashboard/jobs/${job._id}`}
+                    href={`/jobs/${job._id}`}
                     className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                   >
                     <FileText className="h-4 w-4" />
                     View Job
                   </Link>
                   <Link
-                    href={`/employer/dashboard/jobs/applications/${job._id}`}
+                    href={`/employer/jobs/applications/${job._id}`}
                     className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                   >
                     <Users className="h-4 w-4" />
@@ -177,6 +177,20 @@ export default function RecruitmentDashboard() {
     },
     { accessor: 'candidateName', header: 'Candidate Name' },
     { accessor: 'candidateEmail', header: 'Candidate Email' },
+    {
+      accessor: 'Analytics',
+      header: 'Interview analytics',
+      render: (_: any, row: any) => (
+        <Link
+          href={`/interview/${row._id}/analytics`}
+        >
+          <Button variant="outline">
+            <BarChart className="h-4 w-4" />
+            View Analytics
+          </Button>
+        </Link>
+      ),
+    },
     {
       accessor: 'interviewStatus',
       header: 'Interview Status',
@@ -230,25 +244,6 @@ export default function RecruitmentDashboard() {
       ),
     },
     {
-      accessor: 'Analytics',
-      header: 'Interview analytics',
-      render: (_: any, row: any) => (
-        <Link
-          href={`/employer/dashboard/jobs/applications/${row.jobId}`}
-        >
-          <Button variant="outline">
-            <BarChart className="h-4 w-4" />
-            View Analytics
-          </Button>
-        </Link>
-      ),
-    },
-    {
-      accessor: 'createdAt',
-      header: 'Applied On',
-      render: (_: any, row: any) => format(new Date(row.createdAt), 'yyyy-MM-dd'),
-    },
-    {
       accessor: 'actions',
       header: 'Actions',
       render: (_: any, row: any) => (
@@ -262,21 +257,21 @@ export default function RecruitmentDashboard() {
             <PopoverContent className="w-40 p-2">
               <div className="flex flex-col gap-2">
                 <Link
-                  href={`/employer/dashboard/jobs/analytics/${row.jobId}`}
+                  href={`/interview/${row._id}/analytics`}
                   className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                 >
                   <BarChart className="h-4 w-4" />
                   View Analytics
                 </Link>
                 <Link
-                  href={`/employer/dashboard/candidates/${row.id}`}
+                  href={`/candidates/${row.candidateId}`}
                   className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                 >
                   <User className="h-4 w-4" />
                   View Candidate
                 </Link>
                 <Link
-                  href={`/employer/dashboard/jobs/${row.jobId}`}
+                  href={`/jobs/${row.jobId}`}
                   className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                 >
                   <FileText className="h-4 w-4" />
@@ -288,12 +283,18 @@ export default function RecruitmentDashboard() {
         </div>
       ),
     },
+    {
+      accessor: 'createdAt',
+      header: 'Applied On',
+      render: (_: any, row: any) => format(new Date(row.createdAt), 'yyyy-MM-dd'),
+    },
   ];
 
   const applicationTableData = analyticsData?.data?.recentApplications?.map((app: any) => ({
-    id: app._id,
+    _id: app._id,
     jobId: app.jobId,
     jobTitle: app.job.title,
+    candidateId: app.candidateId,
     candidateName: app.candidate.name,
     candidateEmail: app.candidate.email,
     interviewStatus: app.interviewstatus,
@@ -402,7 +403,7 @@ export default function RecruitmentDashboard() {
                           Edit
                         </button>
                         <Link
-                          href={`/employer/dashboard/jobs/${row.id}`}
+                          href={`/jobs/${row.id}`}
                           className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                         >
                           <FileText className="h-4 w-4" />
