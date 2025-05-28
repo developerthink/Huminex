@@ -2,6 +2,7 @@ import { Document } from 'mongoose';
 export type RoleType = "candidate" | "employer" | "none";
 export type ProviderType = "credentials" | "google" | "github";
 export interface UserType extends Document {
+  _id: string;
   name: string;
   email: string;
   password: string;
