@@ -226,7 +226,7 @@ const Dashboard = () => {
                               <ClipboardCheck className="w-4 h-4 text-green-500" />
                             </div>
                             <span className="text-gray-700">
-                              All profile sections complete!
+                              All profile sections completed!
                             </span>
                           </li>
                         )}

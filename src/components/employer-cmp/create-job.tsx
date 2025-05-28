@@ -339,10 +339,12 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
         return;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
+      queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['employerAnalytics'] });
+
 
       toast.success(isEditing ? 'Job updated successfully' : 'Job created successfully');
-      router.push('/employer/dashboard/jobs');
+      // router.push('/employer/dashboard/jobs');
       if (onSubmit) onSubmit(formValues);
       // Close dialog both for controlled and uncontrolled modes
       if (onOpenChange) {

@@ -63,7 +63,8 @@ const page = () => {
         return;
       }
       toast.success('Job deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
+      queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['employerAnalytics'] });
       setDeleteJobId(null);
     },
     onError: (error: any) => {
@@ -223,7 +224,6 @@ const page = () => {
             onOpenChange={(open) => !open && setEditingJobId(null)}
             onSubmit={() => {
               setEditingJobId(null);
-              queryClient.invalidateQueries({ queryKey: ['emp-jobs','employerAnalytics'] });
             }}
           />
         </div>
