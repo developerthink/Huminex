@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSpeechRecognition } from "@/lib/speech-to-txt";
 import { useTextToSpeech } from "@/lib/txt-speech";
 import { toast } from "sonner";
@@ -48,7 +48,7 @@ const AgentModel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [interviewState, setInterviewState] = useState<
-    "idle" | "starting" | "active" | "ended"
+    "idle" | "requesting" | "countdown" | "starting" | "active" | "ended"
   >("idle");
   const [context, setContext] = useState<Message[]>([]);
   const [retryCount, setRetryCount] = useState(0);
@@ -62,6 +62,13 @@ const AgentModel = () => {
   const [startTiming, setStartTiming] = useState<number | null>(null);
   const [isNearEnd, setIsNearEnd] = useState(false);
   const [remainingTime, setRemainingTime] = useState(duration); // Remaining time in milliseconds
+  const [permissionsGranted, setPermissionsGranted] = useState({
+    camera: false,
+    microphone: false,
+  });
+  const [countdown, setCountdown] = useState(5);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
+  const toastIdRef = useRef<string | number | null>(null);
 
   const {
     data: applicationData,
@@ -72,6 +79,63 @@ const AgentModel = () => {
     queryFn: async () => getApplicationDetails(appid as string),
     enabled: !!appid,
   });
+
+  // Debounced toast to prevent multiple renders
+  const showToast = useCallback(
+    (message: string) => {
+      if (toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+      }
+      toastIdRef.current = toast.error(message, {
+        position: "top-center",
+        duration: 5000,
+      });
+    },
+    []
+  );
+
+  // Request camera and microphone permissions
+  const requestPermissions = useCallback(async () => {
+    setInterviewState("requesting");
+    setPermissionError(null);
+    try {
+      // Request camera permission
+      const videoStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+      // Request microphone permission
+      const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      setPermissionsGranted({ camera: true, microphone: true });
+      // Stop the streams as we only need permission check
+      videoStream.getTracks().forEach((track) => track.stop());
+      audioStream.getTracks().forEach((track) => track.stop());
+      setInterviewState("countdown");
+    } catch (err) {
+      console.error("Permission error:", err);
+      setPermissionError("Camera and microphone permissions are required.");
+      showToast("Camera and microphone permissions are required to start the interview.");
+      setInterviewState("idle");
+    }
+  }, [showToast]);
+
+  // Handle countdown
+  useEffect(() => {
+    if (interviewState !== "countdown") return;
+
+    if (countdown === 0) {
+      setInterviewState("starting");
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [interviewState, countdown]);
 
   // Set startTiming when interview becomes active
   useEffect(() => {
@@ -253,7 +317,7 @@ const AgentModel = () => {
       setError(
         error instanceof Error ? error.message : "Failed to get AI response"
       );
-      toast.error("Failed to get response from AI. Please try again.");
+      showToast("Failed to get response from AI. Please try again.");
 
       if (interviewState === "active" && !isNearEnd) {
         setTimeout(() => startListening(), 1000);
@@ -286,20 +350,14 @@ const AgentModel = () => {
     const checkBrowser = () => {
       const browser = detectBrowser();
       if (browser === "Brave") {
-        toast.warning(
-          "Not supported | Please use Google Chrome or Microsoft Edge",
-          {
-            position: "top-center",
-            duration: Infinity,
-          }
-        );
+        toast.error("Brave Browser is not supported. Please use Google Chrome or Microsoft Edge.");
         setIsBrave(true);
       }
     };
 
     const timer = setTimeout(checkBrowser, 1000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [showToast]);
 
   // Initialize interview
   useEffect(() => {
@@ -307,7 +365,7 @@ const AgentModel = () => {
       if (
         hasInitialized ||
         isBrave ||
-        interviewState !== "idle" ||
+        interviewState !== "starting" ||
         !applicationData ||
         isApplicationLoading ||
         applicationData.interviewstatus === "COMPLETED"
@@ -316,7 +374,6 @@ const AgentModel = () => {
       }
 
       setHasInitialized(true);
-      setInterviewState("starting");
 
       try {
         setDuration(
@@ -338,7 +395,7 @@ const AgentModel = () => {
 
         const parsedResponse = JSON.parse(result.data);
         const { aiResponse } = parsedResponse;
-           console.log(aiResponse, "This is aiResponse");
+        console.log(aiResponse, "This is aiResponse");
         setContext([{ role: "assistant", content: result.data }]);
         setInterviewState("active");
 
@@ -356,7 +413,7 @@ const AgentModel = () => {
         setError(
           "Failed to start the interview. Please refresh and try again."
         );
-        toast.error(
+        showToast(
           "Failed to start the interview. Please refresh and try again."
         );
         setInterviewState("idle");
@@ -370,6 +427,7 @@ const AgentModel = () => {
     interviewState,
     applicationData,
     isApplicationLoading,
+    showToast,
   ]);
 
   // Handle completed interview status
@@ -389,7 +447,7 @@ const AgentModel = () => {
         "You will lose all entered data if you refresh or leave this page. Are you sure?";
       e.preventDefault();
       e.returnValue = message;
-      toast.warning("This may lead to loss of interview data");
+      showToast("This may lead to loss of interview data");
       return message;
     };
 
@@ -397,14 +455,13 @@ const AgentModel = () => {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [showToast]);
 
   // Handle loading and error states for job data
   if (isApplicationLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center">
         <span className="intvLoader"></span>
-       
         <h2 className="text-2xl">Scheduling interview...</h2>
       </div>
     );
@@ -471,7 +528,7 @@ const AgentModel = () => {
 
   if (applicationData.interviewstatus === "COMPLETED") {
     return (
-      <div className="h-screen flex items-center justify-center  flex-col gap-3">
+      <div className="h-screen flex items-center justify-center flex-col gap-3">
         <Image
           src="/interview-completed.png"
           alt="Interview Completed"
@@ -484,6 +541,77 @@ const AgentModel = () => {
             Go Back
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (isBrave) {
+    return (
+      <div className="h-screen flex items-center justify-center flex-col gap-3">
+        <Image
+          src="/browser-not-supported.png"
+          alt="Browser Not Supported"
+          width={300}
+          height={300}
+        />
+        <div className="text-center">
+          <h2 className="text-xl">
+            Brave Browser is not supported. Please use Google Chrome or Microsoft
+            Edge.
+          </h2>
+          <Button onClick={() => router.push("/")} className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (interviewState === "idle" || interviewState === "requesting") {
+    return (
+      <div className="h-screen flex items-center justify-center flex-col gap-4">
+        <h2 className="text-2xl">Permission Required</h2>
+        <p className="text-center max-w-md">
+          Please grant access to your camera and microphone to proceed with the
+          interview.
+        </p>
+        {permissionError && (
+          <p className="text-red-500">{permissionError}</p>
+        )}
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <span>Camera:</span>
+            <span
+              className={
+                permissionsGranted.camera ? "text-green-500" : "text-red-500"
+              }
+            >
+              {permissionsGranted.camera ? "Granted" : "Not Granted"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>Microphone:</span>
+            <span
+              className={
+                permissionsGranted.microphone ? "text-green-500" : "text-red-500"
+              }
+            >
+              {permissionsGranted.microphone ? "Granted" : "Not Granted"}
+            </span>
+          </div>
+        </div>
+        <Button onClick={requestPermissions}>
+          Request Permissions
+        </Button>
+      </div>
+    );
+  }
+
+  if (interviewState === "countdown") {
+    return (
+      <div className="h-screen flex items-center justify-center flex-col gap-4">
+        <h2 className="text-2xl">Interview Starting in</h2>
+        <div className="text-4xl font-bold">{countdown}</div>
       </div>
     );
   }
@@ -567,6 +695,7 @@ const AgentModel = () => {
           />
           {(finalTranscript || interimTranscript) && (
             <div className="p-2 px-3 bottom-2 absolute bg-black/80 text-white rounded-lg mb-4 max-w-[90%]">
+             iers
               <span className="font-bold">{finalTranscript}</span>
               <span className="font-normal opacity-70">
                 {" "}
@@ -702,7 +831,9 @@ const AgentModel = () => {
         </Button>
       </div>
       <br />
-      <div className="p-0.5 bgGrad text-center fixed bottom-0 inset-x-0 text-white"><span>Powered by Huminex</span></div>
+      <div className="p-0.5 bgGrad text-center fixed bottom-0 inset-x-0 text-white">
+        <span>Powered by Huminex</span>
+      </div>
     </div>
   );
 };

@@ -53,7 +53,6 @@ export async function POST(request: Request) {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: password,
-      role: "none" as RoleType,
     });
 
     // Return success response with user data (without password)

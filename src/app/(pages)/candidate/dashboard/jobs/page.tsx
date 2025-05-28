@@ -29,7 +29,7 @@ const JobsPage = () => {
     queryKey: ['jobs', searchQuery],
     queryFn: () => fetchAllJobs(searchQuery)
   });
-
+console.log(jobsData)
   if (isLoading) {
     return (
       <WbLoader/>
@@ -80,11 +80,11 @@ const JobsPage = () => {
           </div>
           <div className="space-y-4">
            <div className='grid grid-cols-2 gap-4 *:!bg-white'>
-           {jobsData?.allJobs.map((job: any) => (
+           {jobsData && jobsData?.allJobs.map((job: any) => (
               <JobCard key={job._id} job={job} />
             ))}
            </div>
-            {jobsData?.allJobs.length === 0 && (
+            {jobsData && jobsData?.allJobs.length === 0 && (
               <div className="flex items-center justify-center flex-col">
               <Image src="/nodata.png" alt="No Data" width={200} height={200} />
               <p className="text-gray-500 text-center py-4">
@@ -102,11 +102,11 @@ const JobsPage = () => {
           </div>
           <div className="space-y-4">
            <div className='grid grid-cols-2 gap-4 *:!bg-white'>
-            {jobsData?.recommendedJobs.map((job: any) => (
+            {jobsData && jobsData?.recommendedJobs.map((job: any) => (
               <JobCard key={job._id} job={job} />
             ))}
            </div>
-            {jobsData?.recommendedJobs.length === 0 && (
+            {jobsData && jobsData?.recommendedJobs.length === 0 && (
               <div className="flex items-center justify-center flex-col">
               <Image src="/nodata.png" alt="No Data" width={200} height={200} />
               <p className="text-gray-500 text-center py-4">
@@ -124,11 +124,11 @@ const JobsPage = () => {
           </div>
           <div className="space-y-4">
            <div className='grid grid-cols-2 gap-4 *:!bg-white'>
-            {jobsData?.invitedJobs.map((job: any) => (
+            {jobsData && jobsData?.invitedJobs.map((job: any) => (
               <JobCard key={job._id} job={job} />
             ))}
            </div>
-            {jobsData?.invitedJobs.length === 0 && (
+            {jobsData && jobsData?.invitedJobs.length === 0 && (
               <div className="flex items-center justify-center flex-col">
                 <Image src="/nodata.png" alt="No Data" width={200} height={200} />
                 <p className="text-gray-500 text-center py-4">
