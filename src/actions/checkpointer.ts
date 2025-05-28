@@ -6,6 +6,26 @@ import Application from "@/models/application";
 import { auth } from "@/auth";
 import OpenAI from "openai";
 
+
+export const endConversation = async (appId: string) => {
+  try {
+    await connectDB();
+    const application = await Application.findByIdAndUpdate(appId, {
+      interviewstatus: "COMPLETED",
+    });
+    if (!application) {
+      throw new Error("Application not found");
+    }
+    return {
+      error: null,
+      data: application,
+    };
+  } catch (error) {
+    console.error("Error in endConversation:", error);
+    throw error;
+  }
+};
+
 export async function createConversation({
   appId,
   interviewerResponse,

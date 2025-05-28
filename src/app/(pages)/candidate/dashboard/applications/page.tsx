@@ -7,7 +7,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { fetchApplications } from '@/lib/api-functions/home.api';
 import WbLoader from '@/components/global-cmp/wbLoader';
-import Link from 'next/link';
 import { ClipboardList } from 'lucide-react';
 
 export type ApplicationType = {
@@ -94,9 +93,7 @@ const Page = () => {
     },
   ];
 
-  if (isLoading) {
-    return <WbLoader />
-  }
+
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -113,14 +110,11 @@ const Page = () => {
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
 
+      {isLoading ? <WbLoader /> : (
         <TabsContent value={activeTab} className="w-full">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
               <p className="text-gray-600">Loading applications...</p>
-            </div>
-          ) : error ? (
-            <div className="flex justify-center items-center py-12">
-              <p className="text-red-500">Failed to fetch applications</p>
             </div>
           ) : applications && applications?.length > 0 ? (
             <TableNex 
@@ -144,7 +138,7 @@ const Page = () => {
           ) : (
             <div className="flex justify-center items-center py-12 text-center">
               <div>
-                <p className="text-gray-500 font-medium">No applications found</p>
+                <Image src="/no-jobs.png" alt="No applications found" width={300} height={300} />
                 <p className="text-gray-400 text-sm mt-1">
                   No {activeTab !== 'all' ? activeTab : ''} applications to display
                 </p>
@@ -152,6 +146,7 @@ const Page = () => {
             </div>
           )}
         </TabsContent>
+       )}
       </Tabs>
     </div>
   );

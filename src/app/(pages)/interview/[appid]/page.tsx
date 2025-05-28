@@ -18,7 +18,8 @@ import WebcamFrame from "@/components/global-cmp/webcam-frame";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import { getApplicationDetails } from "@/actions/checkpointer";
+import { endConversation, getApplicationDetails } from "@/actions/checkpointer";
+import PermissionRequest from "@/components/global-cmp/permission";
 
 interface Message {
   role: "user" | "assistant";
@@ -58,7 +59,7 @@ const AgentModel = () => {
   const [endRecording, setEndRecording] = useState(false);
   const [isWebCamOn, setIsWebCamOn] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
-  const [duration, setDuration] = useState(10 * 60 * 1000); // 10 minutes in milliseconds
+  const [duration, setDuration] = useState(5 * 60 * 1000); // Default to 5 minutes in milliseconds
   const [startTiming, setStartTiming] = useState<number | null>(null);
   const [isNearEnd, setIsNearEnd] = useState(false);
   const [remainingTime, setRemainingTime] = useState(duration); // Remaining time in milliseconds
@@ -137,20 +138,28 @@ const AgentModel = () => {
     return () => clearInterval(timer);
   }, [interviewState, countdown]);
 
-  // Set startTiming when interview becomes active
+  // Set interview duration from applicationData and store start time in localStorage
   useEffect(() => {
-    if (interviewState === "active" && !startTiming) {
-      setStartTiming(Date.now());
-      setRemainingTime(duration);
+    if (applicationData?.jobId?.interviewSettings?.interviewDuration && interviewState === "starting") {
+      const durationInMinutes = applicationData.jobId.interviewSettings.interviewDuration;
+      const durationInMs = durationInMinutes * 60 * 1000; // Convert to milliseconds
+      setDuration(durationInMs);
+      const startTime = Date.now();
+      setStartTiming(startTime);
+      // Store start time in localStorage with appid-time as key
+      localStorage.setItem(`${appid}-time`, startTime.toString());
+      setRemainingTime(durationInMs);
     }
-  }, [interviewState, duration]);
+  }, [applicationData, interviewState, appid]);
 
-  // Real-time timer
+  // Real-time timer to check duration and update isNearEnd
   useEffect(() => {
     if (interviewState !== "active" || !startTiming) return;
 
     const timer = setInterval(() => {
-      const elapsedTime = Date.now() - startTiming;
+      const currentTime = Date.now();
+      const storedStartTime = parseInt(localStorage.getItem(`${appid}-time`) || "0");
+      const elapsedTime = currentTime - (storedStartTime || startTiming);
       const newRemainingTime = Math.max(0, duration - elapsedTime);
       setRemainingTime(newRemainingTime);
 
@@ -165,11 +174,12 @@ const AgentModel = () => {
         setEndRecording(true);
         stopListening();
         stopSpeaking();
+        localStorage.removeItem(`${appid}-time`); // Clean up localStorage
       }
-    }, 2000); // Update every second
+    }, 1000); // Update every second
 
     return () => clearInterval(timer);
-  }, [interviewState, startTiming, duration, isNearEnd]);
+  }, [interviewState, startTiming, duration, isNearEnd, appid, stopListening, stopSpeaking]);
 
   // Format remaining time as MM:SS
   const formatTime = (ms: number) => {
@@ -283,7 +293,7 @@ const AgentModel = () => {
       ]);
 
       // Check if interview should end
-      if (isEnded || isNearEnd) {
+      if (isEnded) {
         handleEndInterview();
       }
 
@@ -293,13 +303,13 @@ const AgentModel = () => {
       // Speak the response
       try {
         await speak(aiResponse, { rate: 1.0, pitch: 1.0, volume: 1.0 }, () => {
-          if (interviewState === "active" && !isEnded && !isNearEnd) {
+          if (interviewState === "active" && !isEnded) {
             setTimeout(() => startListening(), 500);
           }
         });
       } catch (speakError) {
         console.error("Text-to-speech error:", speakError);
-        if (interviewState === "active" && !isEnded && !isNearEnd) {
+        if (interviewState === "active" && !isEnded) {
           setTimeout(() => startListening(), 500);
         }
       }
@@ -376,11 +386,6 @@ const AgentModel = () => {
       setHasInitialized(true);
 
       try {
-        setDuration(
-          applicationData.jobId?.interviewSettings?.interviewDuration *
-            60 *
-            1000 || 10 * 60 * 1000
-        ); // 10 minutes in milliseconds
         const initialQuery = `{candidateResponse: "hello", isNearEnd: false}`;
         const result = await chatAction({
           query: initialQuery,
@@ -438,8 +443,9 @@ const AgentModel = () => {
       setEndRecording(true);
       stopListening();
       stopSpeaking();
+      localStorage.removeItem(`${appid}-time`); // Clean up localStorage
     }
-  }, [applicationData]);
+  }, [applicationData, appid, stopListening, stopSpeaking]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -496,11 +502,13 @@ const AgentModel = () => {
     );
   }
 
-  const handleEndInterview = () => {
+  const handleEndInterview = async () => {
     setEndRecording(true);
     setInterviewState("ended");
     stopListening();
     stopSpeaking();
+    localStorage.removeItem(`${appid}-time`); // Clean up localStorage
+    await endConversation(appid as string);
     router.push(`/interview/${appid}/analytics`);
   };
 
@@ -570,39 +578,11 @@ const AgentModel = () => {
   if (interviewState === "idle" || interviewState === "requesting") {
     return (
       <div className="h-screen flex items-center justify-center flex-col gap-4">
-        <h2 className="text-2xl">Permission Required</h2>
-        <p className="text-center max-w-md">
-          Please grant access to your camera and microphone to proceed with the
-          interview.
-        </p>
-        {permissionError && (
-          <p className="text-red-500">{permissionError}</p>
-        )}
-        <div className="flex gap-4">
-          <div className="flex items-center gap-2">
-            <span>Camera:</span>
-            <span
-              className={
-                permissionsGranted.camera ? "text-green-500" : "text-red-500"
-              }
-            >
-              {permissionsGranted.camera ? "Granted" : "Not Granted"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>Microphone:</span>
-            <span
-              className={
-                permissionsGranted.microphone ? "text-green-500" : "text-red-500"
-              }
-            >
-              {permissionsGranted.microphone ? "Granted" : "Not Granted"}
-            </span>
-          </div>
-        </div>
-        <Button onClick={requestPermissions}>
-          Request Permissions
-        </Button>
+        <PermissionRequest 
+          permissions={permissionsGranted}
+          permissionError={permissionError || ""}
+          onPermissionToggle={requestPermissions}
+        />
       </div>
     );
   }
@@ -610,8 +590,14 @@ const AgentModel = () => {
   if (interviewState === "countdown") {
     return (
       <div className="h-screen flex items-center justify-center flex-col gap-4">
+        <Image
+          src="/intvstart.png"
+          alt="Interview Starting"
+          width={500}
+          height={500}
+        />
         <h2 className="text-2xl">Interview Starting in</h2>
-        <div className="text-4xl font-bold">{countdown}</div>
+        <div className="text-5xl font-bold">{countdown}</div>
       </div>
     );
   }
@@ -695,7 +681,6 @@ const AgentModel = () => {
           />
           {(finalTranscript || interimTranscript) && (
             <div className="p-2 px-3 bottom-2 absolute bg-black/80 text-white rounded-lg mb-4 max-w-[90%]">
-             iers
               <span className="font-bold">{finalTranscript}</span>
               <span className="font-normal opacity-70">
                 {" "}
