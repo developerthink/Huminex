@@ -1,3 +1,4 @@
+// models/user/user.ts - Fixed User Model with Proper Cache Handling
 import mongoose, {
   Schema,
   CallbackWithoutResultAndOptionalError,
@@ -5,6 +6,20 @@ import mongoose, {
 } from "mongoose";
 import type { UserType } from "../../types/models/user/user";
 import bcrypt from "bcryptjs";
+
+// Clear existing models to prevent caching issues
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+if (mongoose.models.candidate) {
+  delete mongoose.models.candidate;
+}
+if (mongoose.models.employer) {
+  delete mongoose.models.employer;
+}
+if (mongoose.models.none) {
+  delete mongoose.models.none;
+}
 
 const userSchema = new Schema<UserType>(
   {
@@ -29,10 +44,6 @@ const userSchema = new Schema<UserType>(
       select: true,
       minlength: [6, "Password must be at least 6 characters long"],
     },
-    // authProviderId: {
-    //   type: String,
-    //   select: false,
-    // },
     image: {
       type: String,
       default: "",
@@ -53,6 +64,8 @@ const userSchema = new Schema<UserType>(
     timestamps: true,
     discriminatorKey: "role",
     collection: "users",
+    // Add strict mode to prevent schema conflicts
+    strict: true,
   }
 );
 
@@ -62,7 +75,6 @@ userSchema.pre(
     this: UserType,
     next: CallbackWithoutResultAndOptionalError
   ): Promise<void> {
-    // Only hash the password if it exists and was modified
     if (this.password && this.isModified("password")) {
       try {
         const salt = await bcrypt.genSalt(10);
@@ -81,12 +93,11 @@ userSchema.methods.comparePassword = async function (
   this: UserType,
   candidatePassword: string
 ): Promise<boolean> {
-  // If no password exists (OAuth user), return false
   if (!this.password) return false;
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-const User =
-  mongoose.models?.["User"] || mongoose.model<UserType>("User", userSchema);
+// Create the User model only once
+const User = mongoose.model<UserType>("User", userSchema);
 
 export default User;
