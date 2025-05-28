@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 export default async function RolePage() {
   const session = await auth();
   const role = session?.user?.role;
-  if (role) {
+  if (role && role !== "none") {
     redirect(`/${role}/dashboard`);
   }
 

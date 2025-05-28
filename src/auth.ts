@@ -29,7 +29,7 @@ const findOrCreateOAuthUser = async ({
     name: name || email.split("@")[0],
     email,
     image,
-    role: undefined as RoleType,
+    role: "none" as RoleType,
   });
 
   return newUser;

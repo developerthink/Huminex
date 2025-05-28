@@ -1,5 +1,5 @@
 import { Document } from 'mongoose';
-export type RoleType = "candidate" | "employer" | undefined;
+export type RoleType = "candidate" | "employer" | "none";
 export type ProviderType = "credentials" | "google" | "github";
 export interface UserType extends Document {
   name: string;

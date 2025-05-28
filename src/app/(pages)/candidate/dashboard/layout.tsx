@@ -1,4 +1,4 @@
-'use server'
+"use server";
 import React from "react";
 import Logo from "@/components/logo";
 import Link from "next/link";
@@ -14,13 +14,12 @@ import NotificationDropdown from "@/components/candidate-cmp/notification-dropdo
 import Logout from "@/components/global-cmp/logout";
 import StatusMenu from "@/components/global-cmp/status-menu";
 
-
 const DbLayout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth();
   if (!session || session.user.role !== "candidate") {
     return redirect("/login");
   }
-console.log(session)
+  console.log(session);
 
   return (
     <div className="flex gap-2 h-screen overflow-hidden bg-slate-100">
@@ -62,7 +61,7 @@ console.log(session)
           ))}
         </ul>
 
-       <Logout/>
+        <Logout />
       </aside>
       <main className="bg-white rounded-xl p-3 m-4 ml-0 flex-1 overflow-hidden flex flex-col">
         <header className=" p-1 shrink-0 px-2 border-b flex items-center justify-between">
@@ -70,10 +69,10 @@ console.log(session)
             <button disabled={true} className="opacity-50">
               <TbArrowBarToLeft className="w-5 h-5" />
             </button>
-            <StatusMenu/>
+            <StatusMenu />
           </div>
           <div className="flex items-center gap-2">
-            <NotificationDropdown redirect="/candidate/dashboard/notifications"/>
+            <NotificationDropdown redirect="/candidate/dashboard/notifications" />
             <div className="flex items-center gap-2 text-[15px] font-medium">
               <button className=" p-2 rounded-full bg-muted/50 hover:bg-primary/30 hover:text-primary">
                 <User className="w-5 h-5" />
