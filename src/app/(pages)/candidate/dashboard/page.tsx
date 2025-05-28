@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchAllJobs } from "@/lib/api-functions/cnadidate/jobs.api";
 import JobCard from "@/components/job-card";
 import WbLoader from "@/components/global-cmp/wbLoader";
+import Link from "next/link";
 
 type Application = {
   jobId: string;
@@ -126,13 +127,12 @@ const Dashboard = () => {
       accessor: "status",
       render: (_: any, row: any) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            row.status === "PENDING"
+          className={`px-2 py-1 rounded-full text-xs ${row.status === "PENDING"
               ? "bg-yellow-100 text-yellow-800"
               : row.status === "ACCEPTED"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
         >
           {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
         </span>
@@ -157,7 +157,7 @@ const Dashboard = () => {
                   <h2 className="text-lg font-semibold text-gray-800 mb-4">
                     Profile Completeness
                   </h2>
-                  <div className="flex flex-col md:flex-row gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <div className="relative bgGrad text-white rounded-lg border-2 border-green-100 h-48 flex items-center justify-center w-full">
                         <div className="text-center mt-1.5">
@@ -174,7 +174,7 @@ const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
+                      {/* <div className="flex items-center gap-2 mt-1">
                         <p className="text-gray-600 text-sm mb-4">
                           {profileLoading
                             ? "Loading profile information..."
@@ -190,36 +190,35 @@ const Dashboard = () => {
                         >
                           Complete Now
                         </Button>
-                      </div>
+                      </div> */}
                     </div>
-                    <div className="flex-1 flex flex-col justify-center"></div>
+                    {/* <div className="flex-1 flex flex-col justify-center"></div> */}
                     <div className="bg-orange-50 !text-nowrap p-4 border-2 border-orange-100 rounded-lg">
                       <h4 className="font-medium text-gray-800 mb-3">
                         {profileLoading
                           ? "Loading..."
                           : profileData.missingFields.length > 0
-                          ? "Missing Information:"
-                          : "All information complete!"}
+                            ? "Missing Information:"
+                            : "All information complete!"}
                       </h4>
                       <ul className="space-y-4">
                         {profileLoading ? (
                           <li>Loading missing fields...</li>
                         ) : profileData.missingFields.length > 0 ? (
                           profileData.missingFields
-                            .slice(0, 3)
+                            .slice(0, 2)
                             .map((field: string, index: number) => (
-                              <li
-                                key={index}
-                                className="flex items-center gap-3 cursor-pointer hover:bg-orange-100 p-1 rounded transition-colors"
-                                onClick={() =>
-                                  router.push("/candidate/dashboard/profile")
-                                }
-                              >
-                                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                  <FileText className="w-4 h-4 text-orange-500" />
-                                </div>
-                                <span className="text-gray-700">{field}</span>
-                              </li>
+                              <Link href={'/candidate/dashboard/profile'}>
+                                <li
+                                  key={index}
+                                  className="flex items-center gap-3 cursor-pointer hover:bg-orange-100 p-1 rounded transition-colors"
+                                >
+                                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <FileText className="w-4 h-4 text-orange-500" />
+                                  </div>
+                                  <span className="text-gray-700">{field}</span>
+                                </li>
+                              </Link>
                             ))
                         ) : (
                           <li className="flex items-center gap-3">
@@ -232,16 +231,15 @@ const Dashboard = () => {
                           </li>
                         )}
                       </ul>
-                      {profileData.missingFields.length > 3 && (
-                        <div
-                          className="mt-4 text-orange-600 text-sm font-medium cursor-pointer hover:underline"
-                          onClick={() =>
-                            router.push("/candidate/dashboard/profile")
-                          }
-                        >
-                          +{profileData.missingFields.length - 3} more details
-                          missing
-                        </div>
+                      {profileData.missingFields.length > 2 && (
+                        <Link href={'/candidate/dashboard/profile'}>
+                          <div
+                            className="mt-4 text-orange-600 text-sm font-medium cursor-pointer hover:underline"
+                          >
+                            +{profileData.missingFields.length - 2} more details
+                            missing
+                          </div>
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -313,12 +311,12 @@ const Dashboard = () => {
                   <div className="max-h-96 overflow-hidden overflow-y-auto">
                     <TabsContent value="recommended">
                       <div className="mt-4 text-gray-700">
-                        <h3 className="text-lg font-semibold mb-2">
+                        {/* <h3 className="text-lg font-semibold mb-2">
                           Recommended Jobs
                         </h3>
                         <p className="text-gray-600">
                           Jobs tailored to your profile and preferences.
-                        </p>
+                        </p> */}
                         {jobsData?.recommendedJobs.map((job: any) => (
                           <JobCard hasMore={false} key={job._id} job={job} />
                         ))}
@@ -340,12 +338,12 @@ const Dashboard = () => {
                     </TabsContent>
                     <TabsContent value="invited">
                       <div className="mt-4 text-gray-700 text-center">
-                        <h3 className="text-lg font-semibold mb-2">
+                        {/* <h3 className="text-lg font-semibold mb-2">
                           Invited Jobs
                         </h3>
                         <p className="text-gray-600">
                           Jobs you've been invited to apply for.
-                        </p>
+                        </p> */}
                         <div>
                           {jobsData?.invitedJobs.map((job: any) => (
                             <JobCard hasMore={false} key={job._id} job={job} />
