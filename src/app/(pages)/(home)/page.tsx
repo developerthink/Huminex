@@ -29,18 +29,20 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Logo from "@/components/logo"
+import { auth } from "@/auth"
 
-export default function HuminexLanding() {
+export default async function HuminexLanding() {
+  const session = await auth();
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-     
+
 
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 m-4 bg-slate-900/20 text-white backdrop-blur-2xl rounded-full">
         <div className="max-w-7xl mx-auto">
           <div className="glass rounded-3xl px-8 py-4 flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <Logo/>
+              <Logo />
               <span className="text-2xl font-primary font-bold text-white">Huminex</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
@@ -74,19 +76,29 @@ export default function HuminexLanding() {
               </a>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/login">
+              {/* <Link href="/login">
                 <Button
                   variant="ghost"
                  className="rounded-xl !text-white"
                 >
                   Log in
                 </Button>
-              </Link>
-             <Link href="/register">
-             <Button className="rounded-xl">
-                Register
-              </Button>
-             </Link>
+              </Link> */}
+              {
+                session ? (
+                  <Link href={`/${session?.user?.role}/dashboard`}>
+                    <Button className="rounded-xl">
+                      Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/login">
+                    <Button className="rounded-xl">
+                      Log In
+                    </Button>
+                  </Link>
+                )
+              }
             </div>
           </div>
         </div>
@@ -108,7 +120,7 @@ export default function HuminexLanding() {
                   Create and monetize your{" "}
                   <span className="relative">
                     AI interviews
-                    
+
                   </span>
                 </h1>
 
@@ -119,27 +131,28 @@ export default function HuminexLanding() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-               <Link href="/register">
-               <Button
-                  size="lg"
-                  className="p-5 h-12"
-                 
-                >
-                  Get started
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button></Link>
+                <Link href={`${session?.user?.role ?`/${session?.user?.role}/dashboard` : "/register"}`}>
+                  <Button
+                    size="lg"
+                    className="p-5 h-12"
+
+                  >
+                    Get started
+                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Button></Link>
+                  
                 <Button
                   size="lg"
                   variant="outline"
                   className="p-5 h-12"
-                  
+
                 >
                   <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
                   Watch Demo
                 </Button>
               </div>
 
-             
+
             </div>
 
           </div>
@@ -444,27 +457,27 @@ export default function HuminexLanding() {
               recruitment.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-             <Link href="/register">
-             <Button
-                size="lg"
-                className="!bg-white h-12 rounded-full p-4 px-10 text-black"
-              >
-                Get Started
-              </Button>
+              <Link href={`${session?.user?.role ?`/${session?.user?.role}/dashboard` : "/register"}`}>
+                <Button
+                  size="lg"
+                  className="!bg-white h-12 rounded-full p-4 px-10 text-black"
+                >
+                  Get Started
+                </Button>
               </Link>
             </div>
             <p className="text-white/60 text-sm">No credit card required • Setup in 5 minutes</p>
           </div>
         </div>
       </section>
-<br />
+      <br />
       {/* Footer */}
       <footer className="py-10 relative bgGrad text-white">
         <div className="relative max-w-7xl mx-auto px-6">
 
           <div className="border-t border-white/30 pt-10 text-center">
             <p>
-              © 2025 Huminex. All rights reserved. Build by Devyansh and Aasu.
+              © 2025 Huminex. All rights reserved. Build by <Link href="https://devyanshyadav.com" target="_blank" className="hover:underline">Devyansh</Link> and <Link href="https://aasuyadav.com" target="_blank" className="hover:underline">Aasu</Link>.
             </p>
           </div>
         </div>
