@@ -30,11 +30,7 @@ const JobsPage = () => {
     queryFn: () => fetchAllJobs(searchQuery)
   });
 console.log(jobsData)
-  if (isLoading) {
-    return (
-      <WbLoader/>
-    );
-  }
+
 
   if (error) {
     return (
@@ -71,7 +67,7 @@ console.log(jobsData)
           <TabsTrigger value="invited">Invited Positions</TabsTrigger>
         </TabsList>
 
-        <div className='bg-muted/30 rounded-xl p-4'>
+       {isLoading ? <WbLoader /> : <div className='bg-muted/30 rounded-xl p-4'>
         <TabsContent value="all">
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-2">All Jobs</h2>
@@ -138,7 +134,7 @@ console.log(jobsData)
             )}
           </div>
         </TabsContent>
-        </div>
+        </div>}
       </Tabs>
     </div>
   );

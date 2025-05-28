@@ -248,8 +248,8 @@
   position: relative;
   width: 200px;
   height: 200px;
-  background: var(--input);
-  border-radius: 8px;
+  background: rgb(235, 235, 235);
+  border-radius: 14px;
 }
 .analyLoader:before{
   content: '';

@@ -31,6 +31,8 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Cell,
+  PieChart,
+  Pie,
 } from "recharts";
 import {
   User,
@@ -47,14 +49,13 @@ import {
   XCircle,
   Activity,
   BarChart3,
-  PieChart,
+  PieChart as PieChartIcon,
   TrendingUp as LineChartIcon,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { getAnalyticsData } from "@/actions/checkpointer";
 
 const AnalyticsPage = () => {
-  // Uncomment and use your actual query
   const params = useParams();
   const appId = params.appid as string;
   const { data, isLoading, error } = useQuery({
@@ -70,6 +71,7 @@ const AnalyticsPage = () => {
         <div className="text-center">
           <div className="h-screen flex flex-col items-center justify-center">
             <span className="analyLoader"></span>
+            <br />
             <h2 className="text-2xl">Loading interview analytics...</h2>
           </div>
         </div>
@@ -97,7 +99,6 @@ const AnalyticsPage = () => {
 
   const analytics = data.data.analyticsData;
   console.log(data.data.conversationsData);
-  // Prepare chart data
   const radarData = [
     {
       subject: "Communication",
@@ -158,9 +159,10 @@ const AnalyticsPage = () => {
     return "bg-red-500";
   };
 
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -190,7 +192,6 @@ const AnalyticsPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Score Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
@@ -291,13 +292,11 @@ const AnalyticsPage = () => {
           </Card>
         </div>
 
-        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Radar Chart */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <PieChart className="w-5 h-5 mr-2" />
+                <PieChartIcon className="w-5 h-5 mr-2" />
                 Performance Overview
               </CardTitle>
               <CardDescription>
@@ -324,7 +323,6 @@ const AnalyticsPage = () => {
             </CardContent>
           </Card>
 
-          {/* Question Performance */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -349,9 +347,7 @@ const AnalyticsPage = () => {
           </Card>
         </div>
 
-        {/* Detailed Metrics & Performance Over Time */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Detailed Metrics */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -364,18 +360,27 @@ const AnalyticsPage = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={detailedMetricsData} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 10]} />
-                  <YAxis dataKey="metric" type="category" width={140} />
+                <PieChart>
+                  <Pie
+                    data={detailedMetricsData}
+                    dataKey="score"
+                    nameKey="metric"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label
+                  >
+                    {detailedMetricsData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
                   <Tooltip />
-                  <Bar dataKey="score" fill="#10b981" radius={[0, 4, 4, 0]} />
-                </BarChart>
+                  <Legend />
+                </PieChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Performance Over Time */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -424,9 +429,7 @@ const AnalyticsPage = () => {
           </Card>
         </div>
 
-        {/* Keywords & Feedback Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Keywords */}
           <Card>
             <CardHeader>
               <CardTitle>Keywords Detected</CardTitle>
@@ -445,7 +448,6 @@ const AnalyticsPage = () => {
             </CardContent>
           </Card>
 
-          {/* Strengths */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-green-700">
@@ -465,7 +467,6 @@ const AnalyticsPage = () => {
             </CardContent>
           </Card>
 
-          {/* Areas for Improvement */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-orange-700">
@@ -486,9 +487,7 @@ const AnalyticsPage = () => {
           </Card>
         </div>
 
-        {/* HR Insights & AI Notes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* HR Insights */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -549,7 +548,6 @@ const AnalyticsPage = () => {
             </CardContent>
           </Card>
 
-          {/* AI Interviewer Notes */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
