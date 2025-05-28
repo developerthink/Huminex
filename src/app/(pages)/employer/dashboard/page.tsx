@@ -182,7 +182,7 @@ export default function RecruitmentDashboard() {
       header: 'Interview analytics',
       render: (_: any, row: any) => (
         <Link
-          href={`/interview/${row._id}/analytics`}
+          href={`/interview/${row.id}/analytics`}
         >
           <Button variant="outline">
             <BarChart className="h-4 w-4" />
@@ -257,7 +257,7 @@ export default function RecruitmentDashboard() {
             <PopoverContent className="w-40 p-2">
               <div className="flex flex-col gap-2">
                 <Link
-                  href={`/interview/${row._id}/analytics`}
+                  href={`/interview/${row.id}/analytics`}
                   className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md w-full text-left text-sm"
                 >
                   <BarChart className="h-4 w-4" />
@@ -291,7 +291,7 @@ export default function RecruitmentDashboard() {
   ];
 
   const applicationTableData = analyticsData?.data?.recentApplications?.map((app: any) => ({
-    _id: app._id,
+    id: app._id,
     jobId: app.jobId,
     jobTitle: app.job.title,
     candidateId: app.candidateId,
