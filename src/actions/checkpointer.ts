@@ -5,8 +5,22 @@ import Conversation from "@/models/conversation";
 import Application from "@/models/application";
 import { auth } from "@/auth";
 import OpenAI from "openai";
-import Job from "@/models/job";
-import User from "@/models/user/user";
+import mongoose from "mongoose";
+
+const ensureModelsRegistered = async () => {
+  try {
+    // Check if Job model exists, if not, import it
+    if (!mongoose.models.Job) {
+      await import("@/models/job");
+    }
+    // Add other models as needed
+    if (!mongoose.models.User) {
+      await import("@/models/user/user"); // if you have a User model for employerId
+    }
+  } catch (error) {
+    console.error("Error registering models:", error);
+  }
+};
 
 export const endConversation = async (appId: string) => {
   try {
@@ -82,6 +96,7 @@ export async function createConversation({
 export const getApplicationDetails = async (appId: string) => {
   try {
     await connectDB();
+    await ensureModelsRegistered();
     const application = await Application.findById(appId)
       .populate({
         path: "jobId",
