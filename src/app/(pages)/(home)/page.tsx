@@ -31,6 +31,7 @@ import Link from "next/link"
 import Logo from "@/components/logo"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
+import BookDemo from "@/components/book-demo"
 
 export default async function HuminexLanding() {
   const session = await auth();
@@ -88,6 +89,7 @@ export default async function HuminexLanding() {
                   Log in
                 </Button>
               </Link> */}
+              <BookDemo />
               {
                 session ? (
                   <Link href={`/${session?.user?.role}/dashboard`}>

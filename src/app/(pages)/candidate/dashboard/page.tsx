@@ -98,16 +98,16 @@ const Dashboard = () => {
       render: (_: any, row: any) => (
         <Link href={`/jobs/${row.jobId}`} target="_black">
           <div className="flex items-center gap-2">
-          <div className="w-8 h-8 relative">
-            <Image
-              src={row.logo || "/default-company-logo.png"}
-              alt={row.company}
-              fill
-              className="rounded-md object-cover"
-            />
+            <div className="w-8 h-8 relative">
+              <Image
+                src={row.logo || "/default-company-logo.png"}
+                alt={row.company}
+                fill
+                className="rounded-md object-cover"
+              />
+            </div>
+            <span>{row.company}</span>
           </div>
-          <span>{row.company}</span>
-        </div>
         </Link>
       ),
     },
@@ -129,13 +129,12 @@ const Dashboard = () => {
       accessor: "hiringStatus",
       render: (_: any, row: any) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            row.hiringStatus === "PENDING"
+          className={`px-2 py-1 rounded-full text-xs ${row.hiringStatus === "PENDING"
               ? "bg-yellow-100 text-yellow-800"
               : row.hiringStatus === "HIRED"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
         >
           {row.hiringStatus.charAt(0).toUpperCase() + row.hiringStatus.slice(1)}
         </span>
@@ -312,7 +311,7 @@ const Dashboard = () => {
                     <TabsTrigger value="recommended">Recommended</TabsTrigger>
                     <TabsTrigger value="invited">Invited</TabsTrigger>
                   </TabsList>
-                  <div className="max-h-96 overflow-hidden overflow-y-auto">
+                  <div className="max-h-80 overflow-hidden overflow-y-auto">
                     <TabsContent value="recommended">
                       <div className="mt-4 text-gray-700">
                         {jobsData?.recommendedJobs.map((job: any) => (
