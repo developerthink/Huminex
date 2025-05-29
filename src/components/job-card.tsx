@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import {
-  Bookmark,
   Share2,
   DollarSign,
   Clock,
@@ -45,7 +44,6 @@ const JobCard: React.FC<JobCardProps> = ({
 }: JobCardProps) => {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [bookmarked, setBookmarked] = useState(false);
 
   const applyMutation = useMutation({
     mutationFn: () => applyForJob(job._id),
@@ -89,17 +87,17 @@ const JobCard: React.FC<JobCardProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setBookmarked(!bookmarked)}
-            aria-label="Bookmark job"
-          >
-            <Bookmark
-              size={18}
-              className={
-                bookmarked ? "fill-blue-600 text-blue-600" : "text-gray-500"
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: `${job.title} at ${job.employerId.companyDetails.name}`,
+                  text: `${job.title} at ${job.employerId.companyDetails.name}\n\nApply now: ${window.location.origin}/jobs/${job._id}`,
+                })
+                .catch((error) => console.log('Error sharing:', error));
               }
-            />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Share job">
+            }}
+            aria-label="Share job"
+          >
             <Share2 size={18} className="text-gray-500" />
           </Button>
         </div>
