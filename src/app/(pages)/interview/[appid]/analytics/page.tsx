@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Users, Github, Linkedin, Globe, Twitter } from "lucide-react";
 import {
   RadarChart,
   Radar,
@@ -51,8 +52,10 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   TrendingUp as LineChartIcon,
+  MapPin,
+  Clock,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { getAnalyticsData } from "@/actions/checkpointer";
 
 const AnalyticsPage = () => {
@@ -62,8 +65,6 @@ const AnalyticsPage = () => {
     queryKey: ["analytics", appId],
     queryFn: async () => getAnalyticsData(appId),
   });
-
-  console.log(data);
 
   if (isLoading) {
     return (
@@ -97,8 +98,12 @@ const AnalyticsPage = () => {
     );
   }
 
-  const analytics = data.data.analyticsData;
-  console.log(data.data.conversationsData);
+  const router = useRouter();
+  const {
+    applicationData,
+    conversationsData,
+    analyticsData: analytics,
+  } = data.data;
   const radarData = [
     {
       subject: "Communication",
@@ -153,13 +158,46 @@ const AnalyticsPage = () => {
     return "text-red-600";
   };
 
-  const getProgressColor = (score: any) => {
-    if (score >= 80) return "bg-green-500";
-    if (score >= 60) return "bg-yellow-500";
-    return "bg-red-500";
+  const getDifficultyColor = (level: string) => {
+    switch (level.toLowerCase()) {
+      case "easy":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "hard":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
   };
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+  const getJobTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "full-time":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "part-time":
+        return "bg-indigo-100 text-indigo-800 border-indigo-200";
+      case "contract":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "hired":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "rejected":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -167,9 +205,13 @@ const AnalyticsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
+              <Button
+                onClick={() => router.push("/")}
+                variant="ghost"
+                size="sm"
+              >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Interviews
+                Back
               </Button>
               <Separator orientation="vertical" className="h-6" />
               <div>
@@ -186,6 +228,155 @@ const AnalyticsPage = () => {
                 <Download className="w-4 h-4 mr-2" />
                 Export Report
               </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto p-4 w-full m-2">
+        <div>
+          {/* Header Section */}
+          <div className="flex flex-col lg:flex-row gap-6 ">
+            {/* Job Details */}
+            <div className="flex-1">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-800 mb-2">
+                    {applicationData.jobId.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-3 ">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      <span className="capitalize">
+                        {applicationData.jobId.location}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span className="capitalize">
+                        {applicationData.jobId.workType}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getJobTypeColor(
+                      applicationData.jobId.jobType
+                    )}`}
+                  >
+                    {applicationData.jobId.jobType}
+                  </span>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(
+                      applicationData.jobId.interviewSettings.difficultyLevel
+                    )}`}
+                  >
+                    {applicationData.jobId.interviewSettings.difficultyLevel}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Candidate Section */}
+          <div className="bgGrad rounded-xl p-6 border border-slate-200 !text-white">
+            <div className="flex items-start gap-6">
+              {/* Profile Image */}
+              <div className="flex-shrink-0">
+                <img
+                  src={applicationData.candidateId.image}
+                  alt={applicationData.candidateId.name}
+                  className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+              </div>
+
+              {/* Candidate Info */}
+              <div className="flex-1">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h2 className="text-2xl font-semibold  mb-1">
+                      {applicationData.candidateId.name}
+                    </h2>
+                    <p className=" mb-2">{applicationData.candidateId.email}</p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                      applicationData.hiringStatus
+                    )}`}
+                  >
+                    {applicationData.hiringStatus}
+                  </span>
+                </div>
+
+                {/* Skills */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium  mb-2">Top Skills</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {applicationData.candidateId.skill
+                      .slice(0, 5)
+                      .map((skill: string, index: number) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-primary/30 border !border-primary/40 backdrop-blur-2xl !text-white rounded-full text-sm font-medium  transition-colors"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    {applicationData.candidateId.skill.length > 5 && (
+                      <span className="px-3 py-1 bg-primary/30 border !border-primary/40 backdrop-blur-2xl !text-white rounded-full text-sm font-medium">
+                        +{applicationData.candidateId.skill.length - 5} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Social Links */}
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium ">Connect:</span>
+                  <div className="flex gap-3">
+                    {applicationData.candidateId.socialLinks.linkedin && (
+                      <a
+                        href={applicationData.candidateId.socialLinks.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
+                        <Linkedin className="w-4 h-4" />
+                      </a>
+                    )}
+                    {applicationData.candidateId.socialLinks.github && (
+                      <a
+                        href={applicationData.candidateId.socialLinks.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <Github className="w-4 h-4" />
+                      </a>
+                    )}
+                    {applicationData.candidateId.socialLinks.portfolio && (
+                      <a
+                        href={`https://${applicationData.candidateId.socialLinks.portfolio}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                      </a>
+                    )}
+                    {applicationData.candidateId.socialLinks.x && (
+                      <a
+                        href={applicationData.candidateId.socialLinks.x}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition-colors"
+                      >
+                        <Twitter className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -371,7 +562,10 @@ const AnalyticsPage = () => {
                     label
                   >
                     {detailedMetricsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
