@@ -20,6 +20,7 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { endConversation, getApplicationDetails } from "@/actions/checkpointer";
 import PermissionRequest from "@/components/global-cmp/permission";
+import { createNotificationAction } from "@/actions/notification";
 
 interface Message {
   role: "user" | "assistant";
@@ -510,6 +511,14 @@ const AgentModel = () => {
     localStorage.removeItem(`${appid}-time`); // Clean up localStorage
     await endConversation(appid as string);
     router.push(`/interview/${appid}/analytics`);
+    await createNotificationAction({
+      title: "New Interview",
+      email: applicationData.jobId?.employerId?.email,
+      content: `<p>Hi ${applicationData.jobId?.employerId?.name},</p>
+      <p>You have a new interview request.</p>
+      <p>Click <a href="${process.env.NEXT_PUBLIC_APP_URL}/interview/${appid}">here</a> to accept the interview.</p>`,
+      receiver_id: applicationData.jobId?.employerId?._id
+    });
   };
 
   const handleMicToggle = () => {
@@ -557,17 +566,16 @@ const AgentModel = () => {
     return (
       <div className="h-screen flex items-center justify-center flex-col gap-3">
         <Image
-          src="/browser-not-supported.png"
+          src="/brave-nosupport.png"
           alt="Browser Not Supported"
-          width={300}
-          height={300}
+          width={500}
+          height={500}
         />
         <div className="text-center">
           <h2 className="text-xl">
-            Brave Browser is not supported. Please use Google Chrome or Microsoft
-            Edge.
+            Brave Browser is not supported. <br /> Please use Google Chrome or Microsoft Edge.
           </h2>
-          <Button onClick={() => router.push("/")} className="mt-4">
+          <Button onClick={() => router.back()} className="mt-4">
             Go Back
           </Button>
         </div>

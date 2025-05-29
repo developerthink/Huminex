@@ -5,7 +5,6 @@ import connectDB from '@/config/db';
 import Notification from '@/models/notification';
 import { revalidatePath } from 'next/cache';
 
-
 export async function createNotificationAction({
   title,
   email,

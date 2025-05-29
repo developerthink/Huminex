@@ -1,15 +1,15 @@
-'use client'
-import { useParams, usePathname } from 'next/navigation';
-import React from 'react'
-import Link from 'next/link'
+"use client";
+import { usePathname } from "next/navigation";
+import React from "react";
+import Link from "next/link";
 
 const StatusMenu = () => {
-    const path = usePathname();
+  const path = usePathname();
   return (
-    <Link href={path}>
-        {path.split("/").pop()}
+    <Link href={path} className="capitalize">
+      {path.split("/").pop() === "dashboard" ? "Home" : path.split("/").pop()}
     </Link>
-  )
-}
+  );
+};
 
-export default StatusMenu
+export default StatusMenu;
