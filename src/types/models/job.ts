@@ -21,7 +21,7 @@ export interface JobType {
   techStack: string[];
   interviewSettings: {
     maxCandidates: 1 | 2;
-    interviewDuration: 10 | 15 | 20 | 25 | 30; // in minutes
+    interviewDuration: 5 | 10 | 15; // in minutes
     interviewers: {
       name: string;
       gender: 'male' | 'female' | '';

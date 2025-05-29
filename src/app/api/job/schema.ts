@@ -69,8 +69,8 @@ export const jobSchema = z.object({
     interviewDuration: z.number({
       required_error: "Interview duration is required",
       invalid_type_error: "Interview duration must be a number"
-    }).refine(val => [10, 15, 20, 25, 30].includes(val), {
-      message: "Interview duration must be 10, 15, 20, 25, or 30 minutes"
+    }).refine(val => [5, 10, 15].includes(val), {
+      message: "Interview duration must be 5, 10, or 15 minutes"
     }),
 
     interviewers: z.array(z.object({
@@ -97,7 +97,7 @@ export const jobSchema = z.object({
       text: z.string({
         required_error: "Question text is required",
         invalid_type_error: "Question text must be a string"
-      }).min(10, "Question must be at least 10 characters"),
+      }),
       type: z.enum(["TECHNICAL", "BEHAVIORAL", "SITUATIONAL"], {
         required_error: "Question type is required",
         invalid_type_error: "Question type must be either TECHNICAL, BEHAVIORAL, or SITUATIONAL"

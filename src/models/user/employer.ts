@@ -6,9 +6,9 @@ const EmployerSchema = new Schema<EmployerType>({
   companyDetails: {
     name: { type: String, required: true },
     about: { type: String, required: true },
-    website: { type: String, required: true },
-    linkedin: { type: String, required: true },
-    x: { type: String, required: true },
+    website: { type: String},
+    linkedin: { type: String },
+    x: { type: String },
     logo: { type: String, required: true },
     numberOfEmployees: { type: Number, required: true },
     companyType: { type: String, required: true },

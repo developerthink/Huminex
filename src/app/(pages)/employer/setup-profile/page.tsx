@@ -18,7 +18,6 @@ import {
   MapPin,
   Building,
   Briefcase,
-  Info,
   Tag,
   Twitter,
 } from "lucide-react";
@@ -45,7 +44,7 @@ interface EditProfileFormProps {
     x: string;
     logo: string;
   };
-  onSubmit: (values: EditProfileFormProps["initialValues"]) => void;
+  onSubmit?: (values: EditProfileFormProps["initialValues"]) => void;
 }
 
 const EditProfileForm = () => {
@@ -82,33 +81,111 @@ const EditProfileForm = () => {
     setFormValues({ ...formValues, about: html });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setLogo(e.target.files[0]);
+  const handleFileChange = (file: File | null) => {
+    setLogo(file);
+  };
+
+  const validateForm = () => {
+    // Validation in specified sequence: company name, number of employees, location, about, logo, tagline, industry type, company type
+
+    // Company Name validation
+    if (!formValues.name) {
+      toast.error("Company name is required");
+      return false;
     }
+    if (formValues.name.length < 2) {
+      toast.error("Company name must be at least 2 characters");
+      return false;
+    }
+
+    // Number of Employees validation
+    if (!formValues.numberOfEmployees) {
+      toast.error("Number of employees is required");
+      return false;
+    }
+    if (isNaN(formValues.numberOfEmployees) || formValues.numberOfEmployees <= 0) {
+      toast.error("Number of employees must be a positive number");
+      return false;
+    }
+
+    // Location validation
+    if (!formValues.location) {
+      toast.error("Location is required");
+      return false;
+    }
+    if (formValues.location.length < 2) {
+      toast.error("Location must be at least 2 characters");
+      return false;
+    }
+
+    // Industry Type validation
+    if (!formValues.industryType) {
+      toast.error("Industry type is required");
+      return false;
+    }
+    if (formValues.industryType.length < 2) {
+      toast.error("Industry type must be at least 2 characters");
+      return false;
+    }
+
+    // Company Type validation
+    if (!formValues.companyType) {
+      toast.error("Company type is required");
+      return false;
+    }
+    if (formValues.companyType.length < 2) {
+      toast.error("Company type must be at least 2 characters");
+      return false;
+    }
+
+    if (formValues.about.length < 10) {
+      toast.error("Company About must be at least 10 characters");
+      return false;
+    }
+
+    // Logo validation
+    if (!logo) {
+      toast.error("Please upload a company logo");
+      return false;
+    }
+    if (logo.size > 5 * 1024 * 1024) {
+      toast.error("Logo file size should be less than 5MB");
+      return false;
+    }
+    if (!logo.type.startsWith("image/")) {
+      toast.error("Please upload an image file for the logo");
+      return false;
+    }
+
+    // Tagline validation
+    if (!formValues.tagline) {
+      toast.error("Tagline is required");
+      return false;
+    }
+    if (formValues.tagline.length < 5) {
+      toast.error("Tagline must be at least 5 characters");
+      return false;
+    }
+    if (formValues.tagline.length > 150) {
+      toast.error("Tagline must not exceed 150 characters");
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // Run validation
+    if (!validateForm()) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      if (!logo) {
-        toast.error("Please upload an image file");
-        return;
-      }
-
-      if (logo.size > 5 * 1024 * 1024) {
-        toast.error("File size should be less than 5MB");
-        return;
-      }
-
-      if (!logo.type.startsWith("image/")) {
-        toast.error("Please upload an image file");
-        return;
-      }
-
-      const uploadResult = await uploadToCloudinary(logo);
-      console.log("uploadResult", uploadResult);
+      const uploadResult = await uploadToCloudinary(logo!);
       const logoUrl = uploadResult.secure_url;
       const response = await axios.put("/api/employer/company-details", {
         companyDetails: {
@@ -126,12 +203,9 @@ const EditProfileForm = () => {
         },
       });
 
-
-      console.log("response during setup profile of employer", response);
-
-
       if (response.data) {
         router.push("/employer/dashboard");
+        toast.success("Company details updated successfully", { position: "top-right" });
       }
     } catch (error) {
       console.error("Error updating company details:", error);
@@ -143,14 +217,18 @@ const EditProfileForm = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen overflow-hidden w-full bg-slate-100">
-      <Card className="max-w-6xl w-full mx-auto p-8  rounded-xl shadow-lg">
+      <Card className="max-w-6xl w-full mx-auto p-8 rounded-xl shadow-lg">
         <div className="flex items-center gap-2">
-          <Image src="/logo.png" alt="Logo" width={50} height={50} className="brightness-105"/>
-          <h2 className="text-2xl font-semibold  text-gray-800">
-            Setup Profile
-          </h2>
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            width={50}
+            height={50}
+            className="brightness-105"
+          />
+          <h2 className="text-2xl font-semibold text-gray-800">Setup Profile</h2>
         </div>
-        <form onSubmit={handleSubmit} className=" flex gap-10">
+        <form onSubmit={handleSubmit} className="flex gap-10">
           <div className="w-[62%] space-y-4">
             {/* Company Name */}
             <div className="relative">
@@ -338,10 +416,7 @@ const EditProfileForm = () => {
           <div className="flex-1 shrink-0 space-y-4">
             {/* Company Logo Upload */}
             <div className="flex items-center space-x-4">
-              <FileUpload 
-                title="Add Company Logo" 
-                onChange={setLogo}
-              />
+              <FileUpload title="Add Company Logo" onChange={handleFileChange} />
             </div>
 
             {/* Company Tagline and X (Twitter) */}
@@ -369,7 +444,8 @@ const EditProfileForm = () => {
                   htmlFor="x"
                   className="ml-2 flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"
                 >
-                  <Twitter className="w-5 h-5 text-gray-400" />X (Twitter)
+                  <Twitter className="w-5 h-5 text-gray-400" />
+                  X (Twitter)
                 </Label>
                 <div className="relative">
                   <Input

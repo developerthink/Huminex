@@ -74,8 +74,8 @@ const jobSchema = new Schema<JobType>(
         type: Number,
         required: [true, "Please specify the interview duration"],
         enum: {
-          values: [10, 15, 20, 25, 30],
-          message: "Interview duration must be 10, 15, 20, 25, or 30 minutes",
+          values: [5, 10, 15],
+          message: "Interview duration must be 5, 10, or 15 minutes",
         },
       },
       interviewers: [
