@@ -83,12 +83,12 @@ interface InvitedCandidate {
   email: string;
 }
 
-type InterviewSettings = Pick<ServerJobType['interviewSettings'], 
-  'maxCandidates' | 'interviewDuration' | 'interviewers' | 
+type InterviewSettings = Pick<ServerJobType['interviewSettings'],
+  'maxCandidates' | 'interviewDuration' | 'interviewers' |
   'difficultyLevel' | 'questions' | 'language'>;
 
-interface JobData extends Pick<ServerJobType, 
-  'title' | 'about' | 'location' | 'salaryRange' | 'jobType' | 
+interface JobData extends Pick<ServerJobType,
+  'title' | 'about' | 'location' | 'salaryRange' | 'jobType' |
   'workExperience' | 'techStack' | 'invitedCandidates'> {
   interviewSettings: InterviewSettings;
 }
@@ -98,7 +98,7 @@ interface JobFormValues extends Omit<JobData, 'salaryRange' | 'workExperience' |
   ctcStart: number | "";
   ctcEnd: number | "";
   maxCandidates: 1 | 2 | "";
-  interviewDuration: 10 | 15 | 20 | 25 | 30 | "";
+  interviewDuration: 5 | 10 | 15 | "";
   interviewers: Interviewer[];
   difficultyLevel: "easy" | "medium" | "hard" | "";
   questions: Question[];
@@ -118,6 +118,7 @@ interface JobPostingWizardProps {
 const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open, onOpenChange }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const getInitialValues = (job?: JobType): JobFormValues => {
     if (job) {
@@ -158,11 +159,10 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
 
   const [formValues, setFormValues] = useState<JobFormValues>(() => getInitialValues(jobToEdit));
 
-  // Update form values when jobToEdit changes
   useEffect(() => {
     if (jobToEdit) {
       setFormValues(getInitialValues(jobToEdit));
-      setStep(1); // Reset to first step when editing a new job
+      setStep(1);
     }
   }, [jobToEdit]);
   const router = useRouter();
@@ -285,19 +285,53 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
     });
   };
 
+  const validateStep = (): string | null => {
+    if (step === 1) {
+      if (!formValues.title) return "Job Title is required";
+      if (!formValues.jobType) return "Job Type is required";
+      if (formValues.techStack.length === 0 || formValues.techStack.some(tech => tech.trim() === ""))
+        return "At least one valid Tech Stack is required";
+      if (formValues.workExperience === "") return "Work Experience is required";
+      if (formValues.ctcStart === "") return "CTC Start is required";
+      if (formValues.ctcEnd === "") return "CTC End is required";
+      if (formValues.about.length < 30) return "About must be at least 30 characters long";
+    }
+    if (step === 2) {
+      if (formValues.maxCandidates === "") return "Number of Openings is required";
+      if (formValues.interviewDuration === "") return "Interview Duration is required";
+      if (formValues.difficultyLevel === "") return "Difficulty Level is required";
+      for (let i = 0; i < formValues.interviewers.length; i++) {
+        const interviewer = formValues.interviewers[i];
+        if (!interviewer.name.trim()) return `Interviewer Name is required`;
+        if (!interviewer.gender) return `Interviewer Gender is required`;
+        if (!interviewer.qualification.trim()) return `Interviewer Qualification is required`;
+      }
+      // questions
+      for (let i = 0; i
+        < formValues.questions.length; i++) {
+        const question = formValues.questions[i];
+        if (!question.text.trim()) return "Question Text is required";
+        if (!question.type) return "Question Type is required";
+      }
+
+      // Questions and invited candidates are optional, so no validation for them
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isStepValid()) {
-      toast.error('Please fill all required fields');
+    if (step !== 3) return;
+
+    const error = validateStep();
+    if (error) {
+      toast.error(error);
       return;
     }
+
     setIsSubmitting(true);
 
     try {
-      // Only submit in preview section
-      if (step !== 3) return;
-
-      // Convert location to the expected format
       let locationValue: "remote" | "on-site" | "hybrid" = "remote";
       if (formValues.location === "on-site") {
         locationValue = "on-site";
@@ -342,11 +376,11 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
       queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['employerAnalytics'] });
 
+      console.log("response of edit or add job", response.data);
 
       toast.success(isEditing ? 'Job updated successfully' : 'Job created successfully');
-      // router.push('/employer/dashboard/jobs');
+      router.push(`/jobs/${response.data.data._id}`);
       if (onSubmit) onSubmit(formValues);
-      // Close dialog both for controlled and uncontrolled modes
       if (onOpenChange) {
         onOpenChange(false);
       } else {
@@ -354,7 +388,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
       }
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
-        // Show Zod validation error
         toast.error(error.response.data.error);
       } else {
         toast.error("Failed to create job. Please try again.");
@@ -366,19 +399,24 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
   };
 
   const nextStep = () => {
-    if (isStepValid()) {
-      setStep(step + 1);
-    } else {
-      toast.error('Please fill all required fields before proceeding');
+    const error = validateStep();
+    if (error) {
+      toast.error(error);
+      return;
     }
+    setStep(step + 1);
+    setValidationError(null);
   };
-  const prevStep = () => setStep(step - 1);
+
+  const prevStep = () => {
+    setStep(step - 1);
+    setValidationError(null);
+  };
 
   const isStepValid = () => {
     if (step === 1) {
       return (
         formValues.title &&
-        formValues.invitedCandidates.every(c => c.name && c.email) &&
         formValues.jobType &&
         formValues.techStack.every((tech) => tech.trim() !== "") &&
         formValues.workExperience !== "" &&
@@ -394,16 +432,15 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
         formValues.difficultyLevel !== "" &&
         formValues.interviewers.every(
           (i) => i.name.trim() !== "" && i.gender !== "" && i.qualification.trim() !== ""
-        ) &&
-        formValues.questions.every((q) => q.text.trim() !== "" && q.type !== "")
+        )
       );
     }
     return true;
   };
 
   return (
-    <Dialog 
-      open={open !== undefined ? open : isOpen} 
+    <Dialog
+      open={open !== undefined ? open : isOpen}
       onOpenChange={onOpenChange || setIsOpen}
     >
       {!isEditing && (
@@ -448,7 +485,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
             <form onSubmit={handleSubmit} className="space-y-8 p-5 pt-0">
               {step === 1 && (
                 <>
-                  {/* Job Title */}
                   <div className="p-4 rounded-xl bg-muted/20 shadow ">
                     <div className="grid grid-cols-2 gap-5">
                       <div className="relative">
@@ -486,7 +522,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                       </div>
                     </div>
 
-                    {/* Job Type and Tech Stack */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="relative group">
                         <Label htmlFor="jobType">Job Type</Label>
@@ -539,7 +574,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                   </div>
 
                   <div className="p-4 rounded-xl bg-muted/20 shadow grid grid-cols-2 divide-x *:px-4">
-                    {/* CTC Range */}
                     <div className="relative group">
                       <Label>CTC Range (Per Annum)</Label>
                       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr]  gap-2 place-items-center">
@@ -568,7 +602,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                         </div>
                       </div>
                     </div>
-                    {/* Work Experience */}
                     <div className="relative group">
                       <Label htmlFor="workExperience">
                         Work Experience (Years)
@@ -589,11 +622,10 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                       </div>
                     </div>
                   </div>
-                  {/* About Job */}
                   <div className="relative group">
                     <Label htmlFor="about">About Job</Label>
                     <div className="relative">
-                      <RichTextEditor 
+                      <RichTextEditor
                         initialContent={formValues.about || "<p>Start writing something brilliant...</p>"}
                         onChange={handleEditorChange}
                       />
@@ -604,10 +636,9 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
 
               {step === 2 && (
                 <>
-                  {/* Invited Candidates */}
                   <div className="space-y-4 p-4 rounded-xl bg-muted/20 shadow mb-6">
                     <div className="space-y-2">
-                      <Label>Invited Candidates</Label><br/>
+                      <Label>Invited Candidates</Label><br />
                       {formValues.invitedCandidates.map((candidate, index) => (
                         <div key={index} className="flex items-center space-x-2">
                           <Input
@@ -645,7 +676,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                     </div>
                   </div>
 
-                  {/* Interview Settings */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 rounded-xl bg-muted/20 shadow">
                     <div className="relative group">
                       <Label htmlFor="maxCandidates">No. of Openings</Label>
@@ -679,11 +709,9 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                             <SelectValue placeholder="Select duration" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="5">5 minutes</SelectItem>
                             <SelectItem value="10">10 minutes</SelectItem>
                             <SelectItem value="15">15 minutes</SelectItem>
-                            <SelectItem value="20">20 minutes</SelectItem>
-                            <SelectItem value="25">25 minutes</SelectItem>
-                            <SelectItem value="30">30 minutes</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -710,9 +738,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                     </div>
                   </div>
 
-                  {/* Difficulty Level */}
-
-                  {/* Interviewers */}
                   <div className="group  rounded-lg shadow overflow-hidden bg-muted/20">
                     <div className="bgGrad *:!text-white p-2.5">
                       <Label className="my-3 text-lg font-semibold">
@@ -822,7 +847,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                     </Button>
                   </div>
 
-                  {/* Interview Questions */}
                   <div className="group rounded-lg shadow overflow-hidden bg-muted/20 p-2">
                     <div className="p-2">
                       <Label className=" text-lg font-medium">
@@ -903,16 +927,12 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
               )}
               {step === 3 && (
                 <div className="space-y-8 p-6">
-                  {/* Preview Section */}
                   <div className="p-8 rounded-2xl  transition-all shadow bg-gradient-to-br from-white to-primary/15">
                     <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                       <FileText className="w-7 h-7 text-indigo-500" /> Job
                       Posting Preview
                     </h3>
 
-
-
-                    {/* Job Overview */}
                     <div className="space-y-6">
                       <div className="border-b border-gray-200 pb-4">
                         <h4 className="text-xl font-semibold text-gray-800">
@@ -924,7 +944,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                         </p>
                       </div>
 
-                      {/* Key Details */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="flex items-center gap-3 group">
                           <Briefcase className="w-6 h-6 text-indigo-500 group-hover:text-indigo-600 transition-colors" />
@@ -956,7 +975,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                         </div>
                       </div>
 
-                      {/* Tech Stack */}
                       <div className="bg-white p-5 rounded-xl shadow-sm">
                         <h5 className="font-semibold text-gray-800 mb-3">
                           Tech Stack
@@ -973,7 +991,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                         </div>
                       </div>
 
-                      {/* About Job */}
                       <div className="bg-white p-5 rounded-xl shadow-sm">
                         <h5 className="font-semibold text-gray-800 mb-3">
                           About the Job
@@ -987,7 +1004,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                         />
                       </div>
 
-                      {/* Interviewers */}
                       <div className="bg-white p-5 rounded-xl shadow-sm">
                         <h5 className="font-semibold text-gray-800 mb-3">
                           Interviewers
@@ -1010,7 +1026,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                         </div>
                       </div>
 
-                      {/* Questions */}
                       <div className="bg-white p-5 rounded-xl shadow-sm">
                         <h5 className="font-semibold text-gray-800 mb-3">
                           Interview Questions
@@ -1031,7 +1046,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                         </div>
                       </div>
 
-                      {/* Difficulty Level */}
                       <div className="flex items-center gap-3 group">
                         <GraduationCap className="w-6 h-6 text-indigo-500 group-hover:text-indigo-600 transition-colors" />
                         <span className="text-gray-700">
@@ -1043,7 +1057,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                   </div>
                 </div>
               )}
-              {/* Form Actions */}
               <div className="flex justify-between mt-8">
                 {step > 1 && (
                   <Button type="button" onClick={prevStep}>
@@ -1055,7 +1068,7 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
                     type="button"
                     className="ml-auto"
                     onClick={nextStep}
-                    disabled={!isStepValid() || isSubmitting}
+                    disabled={isSubmitting}
                   >
                     {isSubmitting ? "Saving..." : "Next"}
                   </Button>

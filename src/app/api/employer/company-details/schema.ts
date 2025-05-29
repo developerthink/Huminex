@@ -10,23 +10,20 @@ export const companyDetailsSchema = z.object({
 
     about: z
       .string({
-        required_error: "Company is required",
+        required_error: "Company About is required",
       })
-      .min(10, "Company must be at least 10 characters"),
+      .min(10, "Company About must be at least 10 characters"),
 
     website: z
       .string()
-      .url("Invalid website URL")
       .optional(),
 
     linkedin: z
       .string()
-      .url("Invalid LinkedIn URL")
       .optional(),
 
     x: z
       .string()
-      .url("Invalid X URL")
       .optional(),
 
     logo: z

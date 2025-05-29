@@ -164,8 +164,126 @@ const EditProfileForm: React.FC = () => {
     if (!file) setLogoUrl('');
   };
 
+  const validateForm = () => {
+    // Validation in specified sequence: company name, number of employees, location, about, logo, tagline, industry type, company type
+
+    // Company Name validation
+    if (!formValues.name) {
+      toast.error("Company name is required");
+      return false;
+    }
+    if (formValues.name.length < 2) {
+      toast.error("Company name must be at least 2 characters");
+      return false;
+    }
+
+    // Number of Employees validation
+    if (!formValues.numEmployees) {
+      toast.error("Number of employees is required");
+      return false;
+    }
+    if (isNaN(Number(formValues.numEmployees)) || Number(formValues.numEmployees) <= 0) {
+      toast.error("Number of employees must be a positive number");
+      return false;
+    }
+
+    // Location validation
+    if (!formValues.location) {
+      toast.error("Location is required");
+      return false;
+    }
+    if (formValues.location.length < 2) {
+      toast.error("Location must be at least 2 characters");
+      return false;
+    }
+
+    // About validation
+    if (!formValues.about) {
+      toast.error("Company About is required");
+      return false;
+    }
+    if (formValues.about.length < 10) {
+      toast.error("Company About must be at least 10 characters");
+      return false;
+    }
+
+    // Logo validation (only if a new logo is uploaded)
+    if (logo) {
+      if (logo.size > 5 * 1024 * 1024) {
+        toast.error("Logo file size should be less than 5MB");
+        return false;
+      }
+      if (!logo.type.startsWith("image/")) {
+        toast.error("Please upload an image file for the logo");
+        return false;
+      }
+    } else if (!logoUrl) {
+      toast.error("Please upload a company logo");
+      return false;
+    }
+
+    // Tagline validation
+    if (!formValues.tagline) {
+      toast.error("Tagline is required");
+      return false;
+    }
+    if (formValues.tagline.length < 5) {
+      toast.error("Tagline must be at least 5 characters");
+      return false;
+    }
+    if (formValues.tagline.length > 150) {
+      toast.error("Tagline must not exceed 150 characters");
+      return false;
+    }
+
+    // Industry Type validation
+    if (!formValues.industryType) {
+      toast.error("Industry type is required");
+      return false;
+    }
+    if (formValues.industryType.length < 2) {
+      toast.error("Industry type must be at least 2 characters");
+      return false;
+    }
+
+    // Company Type validation
+    if (!formValues.companyType) {
+      toast.error("Company type is required");
+      return false;
+    }
+    if (formValues.companyType.length < 2) {
+      toast.error("Company type must be at least 2 characters");
+      return false;
+    }
+
+    return true;
+  };
+
+  const hasChanges = () => {
+    if (!data) return true; // Enable submit if no data is loaded yet
+    return (
+      formValues.name !== data.name ||
+      formValues.linkedIn !== data.linkedIn ||
+      formValues.website !== data.website ||
+      formValues.numEmployees !== data.numEmployees ||
+      formValues.location !== data.location ||
+      formValues.industryType !== data.industryType ||
+      formValues.companyType !== data.companyType ||
+      formValues.about !== data.about ||
+      formValues.tagline !== data.tagline ||
+      formValues.twitter !== data.twitter ||
+      logo !== null // New logo uploaded
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Run validation
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       let updatedLogoUrl = logoUrl;
       if (logo) {
@@ -228,7 +346,7 @@ const EditProfileForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative">
                 <Label htmlFor="linkedIn" className="ml-2 flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                  <Linkedin className="w-5 h-5 text-gray-400" />
+                  <Linkedin className="w-5 h-5 text-gray-200" />
                   LinkedIn
                 </Label>
                 <Input
@@ -242,7 +360,7 @@ const EditProfileForm: React.FC = () => {
               <div className="relative">
                 <Label htmlFor="website" className="ml-2 flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <Globe className="w-5 h-5 text-gray-400" />
-                  Website Link
+                  Website URL
                 </Label>
                 <Input
                   id="website"
@@ -257,7 +375,7 @@ const EditProfileForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative">
                 <Label htmlFor="numEmployees" className="ml-2 flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                  <Users className="w-5 h-5 text-gray-400" />
+                  <Users className="w-5 h-4 text-gray-600" />
                   Number of Employees
                 </Label>
                 <Input
@@ -265,20 +383,20 @@ const EditProfileForm: React.FC = () => {
                   name="numEmployees"
                   value={formValues.numEmployees}
                   onChange={handleInputChange}
-                  placeholder="11-50"
+                  placeholder="Enter number of employees"
                 />
               </div>
               <div className="relative">
-                <Label htmlFor="location" className="ml-2 flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Label htmlFor="location" className="ml-2 flex items-center gap-2 text-sm font-medium text-gray-700 mb- Location">
                   <MapPin className="w-5 h-5 text-gray-400" />
-                  Location of Headquarters
+                  Location
                 </Label>
                 <Input
                   id="location"
                   name="location"
                   value={formValues.location}
                   onChange={handleInputChange}
-                  placeholder="Mumbai, Maharashtra, India"
+                  placeholder="Enter location e.g., Mumbai, India"
                 />
               </div>
             </div>
@@ -290,7 +408,7 @@ const EditProfileForm: React.FC = () => {
                   Industry Type
                 </Label>
                 <Select
-                  key={`industry-${formValues.industryType}`}
+                  key={`industryType-${formValues.industryType}`}
                   value={formValues.industryType || undefined}
                   onValueChange={(value) => handleSelectChange('industryType', value)}
                 >
@@ -320,14 +438,14 @@ const EditProfileForm: React.FC = () => {
                     <SelectValue placeholder="Select company type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Limited Partnership (LP)">
-                      Limited Partnership (LP)
+                    <SelectItem value="Limited Partnership">
+                      Limited Partnership (LLP)
                     </SelectItem>
                     <SelectItem value="Private Limited">
-                      Private Limited
+                      Private Limited Company
                     </SelectItem>
                     <SelectItem value="Public Limited">
-                      Public Limited
+                      Public Limited Company
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -361,7 +479,7 @@ const EditProfileForm: React.FC = () => {
                   name="tagline"
                   value={formValues.tagline}
                   onChange={handleInputChange}
-                  placeholder="Company tagline"
+                  placeholder="Enter company tagline"
                 />
               </div>
               <div className="relative">
@@ -374,16 +492,16 @@ const EditProfileForm: React.FC = () => {
                   name="twitter"
                   value={formValues.twitter}
                   onChange={handleInputChange}
-                  placeholder="@companyname"
+                  placeholder="Enter Twitter handle e.g., @companyname"
                 />
               </div>
             </div>
             <br />
-            <div className="flex justify-end space-x-4">
-              <Button type="button" variant="outline" onClick={() => router.push('/employer/dashboard')}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={mutation.isPending}>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={mutation.isPending || !hasChanges()}
+              >
                 {mutation.isPending ? (
                   <div className="flex items-center">
                     <span className="animate-spin mr-2">⟳</span>
