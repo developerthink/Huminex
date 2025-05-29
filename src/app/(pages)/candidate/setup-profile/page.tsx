@@ -100,9 +100,7 @@ const ProfileSetupPage: React.FC = () => {
 
   // Handle multiselect changes
   const handleDomainsChange = (selected: Option[]) => {
-    if (selected.length <= 3) {
-      setFormData((prev) => ({ ...prev, skill: selected }));
-    }
+    setFormData((prev) => ({ ...prev, skill: selected }));
   };
 
   // Handle hometown state selection
@@ -112,7 +110,7 @@ const ProfileSetupPage: React.FC = () => {
 
   // Handle form submission
   const handleSubmit = async () => {
-    if (!formData.graduationYear || !formData.college || formData.skill.length === 0 || !formData.hometownState) {
+    if (!formData.graduationYear || !formData.college || !formData.hometownState || formData.skill.length === 0) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -232,7 +230,7 @@ const ProfileSetupPage: React.FC = () => {
           {/* skill of Interest */}
           <div className="space-y-1 col-span-2">
             <Label className="text-sm font-medium text-gray-700">
-              Which skill are you interested in working? (add up to 3){" "}
+              Which skill are you interested in working?
               <span className="text-red-500">*</span>
             </Label>
             <MultipleSelector
@@ -248,7 +246,6 @@ const ProfileSetupPage: React.FC = () => {
                   No results found
                 </p>
               }
-              maxSelected={3}
               disabled={isLoading}
             />
           </div>
