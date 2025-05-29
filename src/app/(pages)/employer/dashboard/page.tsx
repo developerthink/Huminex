@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEmployerAnalytics } from '@/lib/api-functions/employer/analytics.api';
 import { updateHiringStatus } from '@/lib/api-functions/employer/job-response.api';
-import { Clipboard, MoreHorizontal, Pencil, Trash, FileText, Users, BarChart, User } from 'lucide-react';
+import { Clipboard, MoreHorizontal, Pencil, Trash, FileText, Users, BarChart, User, LucideBriefcaseBusiness } from 'lucide-react';
 import TableNex from 'react-tablenex';
 import 'react-tablenex/style.css';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -16,6 +16,11 @@ import { toast } from 'sonner';
 import CreateJob from '@/components/employer-cmp/create-job';
 import WbLoader from '@/components/global-cmp/wbLoader';
 import { Button } from '@/components/ui/button';
+import { FaCheckCircle, FaRegCheckCircle, FaRegComments, FaTimesCircle } from 'react-icons/fa';
+import { MdHourglassEmpty } from 'react-icons/md';
+import { ImCancelCircle, ImHourGlass } from 'react-icons/im';
+import { PiBriefcaseMetalFill } from 'react-icons/pi';
+import Image from 'next/image';
 
 type HiringStatus = 'PENDING' | 'HIRED' | 'REJECTED';
 type TableData = Record<string, any>;
@@ -31,18 +36,18 @@ const deleteJob = async (jobId: string) => {
 };
 
 const DashboardCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>{children}</div>
+  <div className={`rounded-lg shadow-sm border bg-muted/20 ${className}`}>{children}</div>
 );
 
-const StatCard = ({ icon: Icon, value, label, bgColor = 'bg-gray-50' }: { icon: any; value: any; label: any; bgColor?: string }) => (
-  <DashboardCard className="p-6">
+const StatCard = ({ icon: Icon, value, label, className }: { icon: any; value: any; label: any; className?: string }) => (
+  <DashboardCard className={`p-6`}>
     <div className="flex items-center space-x-4">
-      <div className={`p-3 rounded-lg ${bgColor}`}>
-        <Icon className="h-6 w-6 text-gray-600" />
+      <div className={`p-3 rounded-lg ${className}`}>
+        <Icon className="h-6 w-6" />
       </div>
       <div>
-        <div className="text-2xl font-bold text-gray-900">{value}</div>
-        <div className="text-sm text-gray-500">{label}</div>
+        <div className="text-2xl font-bold ">{value}</div>
+        <div className="text-sm opacity-80">{label}</div>
       </div>
     </div>
   </DashboardCard>
@@ -321,29 +326,30 @@ export default function RecruitmentDashboard() {
   const { jobsCount, applicationStats } = analyticsData.data;
 
   return (
-    <div className="min-h-screen mt-5 bg-gray-50">
+    <div className="min-h-screen mt-5 ">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="col-span-4 grid grid-cols-4 gap-4">
           <DashboardCard className="p-6 text-white bgGrad">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-gray-700 rounded-lg">
-                <Clipboard className="h-8 w-8" />
+            <div className="flex flex-col space-y-4">
+              <div className="p-3 bg-white/20 w-fit rounded-full">
+                <PiBriefcaseMetalFill className="h-10 w-10" />
               </div>
               <div>
-                <div className="text-4xl font-bold">{jobsCount}</div>
+                <div className="text-5xl font-bold">{jobsCount}</div>
                 <div className="text-gray-300 text-xl">Job posts</div>
               </div>
             </div>
           </DashboardCard>
           <div className="col-span-3 grid grid-cols-2 gap-4">
             <StatCard
-              icon={Clipboard}
+              className="bg-blue-500/20 *:!text-blue-500"
+              icon={FaRegComments}
               value={applicationStats.hiredCount + applicationStats.rejectedCount + applicationStats.pendingCount}
               label="Total Interview Responses"
             />
-            <StatCard icon={Clipboard} value={applicationStats.pendingCount} label="Pending Candidates" />
-            <StatCard icon={Clipboard} value={applicationStats.hiredCount} label="Hired Candidates" />
-            <StatCard icon={Clipboard} value={applicationStats.rejectedCount} label="Rejected Candidates" />
+            <StatCard className="bg-yellow-500/20 *:!text-yellow-500" icon={ImHourGlass} value={applicationStats.pendingCount} label="Pending Candidates" />
+            <StatCard className="bg-green-700/20 *:!text-green-700" icon={FaRegCheckCircle} value={applicationStats.hiredCount} label="Hired Candidates" />
+            <StatCard className="bg-red-700/20 *:!text-red-700" icon={ImCancelCircle} value={applicationStats.rejectedCount} label="Rejected Candidates" />
           </div>
         </div>
       </div>
@@ -461,7 +467,11 @@ export default function RecruitmentDashboard() {
             <div className="flex justify-center items-center h-8">
               <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-red-600"></div>
             </div>
-          ) : 'No jobs found'}
+          ) : <div className='min-h-48 grid place-items-center'>
+            <Image src="/nodata.png" alt="no-data" width={200} height={200} />
+            <p className="text-center text-gray-500">No Jobs Found</p>
+            <CreateJob />
+          </div>}
           data={tableData || []}
         />
 
@@ -480,7 +490,10 @@ export default function RecruitmentDashboard() {
             <div className="flex justify-center items-center h-8">
               <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-red-600"></div>
             </div>
-          ) : 'No job applicants found'}
+          ) : <div className='min-h-48 grid place-items-center'>
+          <Image src="/no-app.png" className='grayscale opacity-60' alt="no-data" width={200} height={200} />
+          <p className="text-center text-gray-500">No Job Applicants</p>
+        </div>}
           data={applicationTableData}
         />
 

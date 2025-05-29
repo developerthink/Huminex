@@ -86,7 +86,7 @@ export default function RoleSelection() {
                     ? "bg-primary text-white border-primary/50"
                     : "bg-white text-gray-900 border-gray-200"
                 }
-                hover:bg-primary hover:text-white hover:border-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                hover:!bg-primary hover:!text-white hover:border-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
                 aria-label={`Select ${role.name} role`}
                 disabled={isLoading}
               >

@@ -12,7 +12,7 @@ const AsideLinks = ({item}: {item: {name: string, href: string, icon: React.Reac
     key={item.name}
   >
     <Link className="flex items-center gap-2" href={item.href}>
-      {item.icon}
+      <span className='*:w-5 *:h-5'>{item.icon}</span>
       <span className="text-[15px] font-medium"> {item.name}</span>
     </Link>
   </li>
