@@ -339,6 +339,7 @@ export const fetchAllConversations = async (appId: string) => {
 
 export const getAnalyticsData = async (appId: string) => {
   try {
+    await connectDB();
     console.log(`Starting analytics data generation for appId: ${appId}`);
     
     // Step 1: Fetch all conversations with better error handling
