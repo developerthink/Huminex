@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaRegCircleCheck } from "react-icons/fa6";
 import { updateUserProfile } from '@/lib/api-functions/home.api';
 import { UserData } from '@/types/user';
+import PermissionWrapper from "@/components/permission-wrapper";
 
 interface ResumeData {
   rawText: string;
@@ -131,9 +132,9 @@ const UploadResume = () => {
               onChange={handleFileUpload}
               className="hidden"
             />
+            <PermissionWrapper handleSubmit={handleUploadClick}>
             <Button 
-              className="rainbowBtn w-full rounded-full text-white !bg-primary" 
-              onClick={handleUploadClick}
+              className="rainbowBtn !w-full !px-16 rounded-full text-white !bg-primary" 
               disabled={isProcessing}
               aria-label="Upload resume"
             >
@@ -149,6 +150,7 @@ const UploadResume = () => {
                 </>
               )}
             </Button>
+            </PermissionWrapper>
           </>
         ) : (
           <>
