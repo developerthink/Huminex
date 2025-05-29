@@ -769,13 +769,13 @@ const AgentModel = () => {
           </Card>
 
           {/* AI Interviewer Status */}
-          <Card className="w-full grid place-items-center text-2xl overflow-hidden text-white aiCard bg-primary/20 border-4 border-primary">
+          <Card className="w-full grid relative place-items-center text-2xl overflow-hidden text-white aiCard bg-primary/20 border-4 border-primary">
             <div className="rounded-full p-2 bg-primary w-[100px] aspect-video absolute blur-3xl right-5 bottom-5"></div>
             <button className="absolute text-primary rounded-full p-1 bg-primary/30 bottom-4 right-4">
-              {interviewState === "active" ? (
-                <IoMdMicOff className="size-6" />
-              ) : (
+              {interviewState === "active" && isSpeaking ? (
                 <IoMdMic className="size-6" />
+              ) : (
+                <IoMdMicOff className="size-6" />
               )}
             </button>
             <div className="text-center ring-5 rounded-full ring-primary/50 relative">
