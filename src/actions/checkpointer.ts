@@ -103,6 +103,7 @@ export const getApplicationDetails = async (appId: string) => {
 // Helper function to safely parse JSON strings
 const safeJsonParse = (jsonString: string): any => {
   try {
+    console.log(jsonString);
     return JSON.parse(jsonString);
   } catch (error) {
     console.error("Error parsing JSON:", error);
@@ -112,7 +113,7 @@ const safeJsonParse = (jsonString: string): any => {
 };
 
 const openai = new OpenAI({
-  apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[0],
+  apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[1],
   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
   timeout: 30000, // Increased to 30 seconds
 });
@@ -457,9 +458,11 @@ export const getAnalyticsData = async (appId: string) => {
       };
     }
 
+    const applicationData= await getApplicationDetails(appId);
     return {
       data: { 
         analyticsData, 
+        applicationData,
         conversationsData: formattedConversation,
         totalConversations: conversations.length 
       },

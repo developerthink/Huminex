@@ -386,7 +386,7 @@ const AgentModel = () => {
       setHasInitialized(true);
 
       try {
-        const initialQuery = `{candidateResponse: "hello", isNearEnd: false}`;
+        const initialQuery = `{"candidateResponse": "Hello", "isNearEnd": false}`;
         const result = await chatAction({
           query: initialQuery,
           context: [],
