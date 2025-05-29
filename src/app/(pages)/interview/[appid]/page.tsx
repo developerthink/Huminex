@@ -408,7 +408,6 @@ const AgentModel = () => {
           context: [],
           appData: applicationData,
         });
-        console.log(result.data, "This is aiResponse");
 
         if (!result.data) {
           throw new Error(result.error || "Failed to initialize interview");
@@ -416,7 +415,6 @@ const AgentModel = () => {
 
         const parsedResponse = JSON.parse(result.data);
         const { aiResponse } = parsedResponse;
-        console.log(aiResponse, "This is aiResponse");
         setContext([{ role: "assistant", content: result.data }]);
         setInterviewState("active");
 
@@ -454,7 +452,6 @@ const AgentModel = () => {
   // Handle completed interview status
   useEffect(() => {
     if (applicationData?.interviewstatus === "COMPLETED") {
-      console.log("Interview Completed");
       setInterviewState("ended");
       setEndRecording(true);
       stopListening();

@@ -25,7 +25,6 @@ const UserProfilePage: React.FC = () => {
   const mutation = useMutation({
     mutationFn: updateCandidateProfile,
     onSuccess: (data) => {
-      console.log("success",data);
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       toast.success('Profile updated successfully.');
     },

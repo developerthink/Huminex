@@ -29,7 +29,6 @@ const UploadResume = () => {
   const mutation = useMutation({
     mutationFn: updateUserProfile,
     onSuccess: (data) => {
-      console.log("success", data);
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       toast.success('Profile updated successfully with resume data.');
     },
@@ -41,7 +40,6 @@ const UploadResume = () => {
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     const text = await pdfToText(file);
-    console.log(text);
     return text;
   };
 

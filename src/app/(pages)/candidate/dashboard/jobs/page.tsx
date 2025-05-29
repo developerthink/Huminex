@@ -29,7 +29,6 @@ const JobsPage = () => {
     queryKey: ['jobs', searchQuery],
     queryFn: () => fetchAllJobs(searchQuery)
   });
-console.log(jobsData)
 
 
   if (error) {
