@@ -83,7 +83,9 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
-
+button{
+  cursor: pointer !important;
+}
 @layer base {
   * {
     @apply border-border outline-ring/50;

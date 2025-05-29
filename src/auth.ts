@@ -4,7 +4,7 @@ import User from "./models/user/user";
 import connectDB from "./config/db";
 import { RoleType } from "./types/models/user/user";
 import CredentialsProvider from "next-auth/providers/credentials";
-import LinkedIn from "next-auth/providers/linkedin";
+import GitHub from "next-auth/providers/github";
 
 // Function to find or create user for OAuth providers
 const findOrCreateOAuthUser = async ({
@@ -41,10 +41,10 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
-    // LinkedIn OAuth
-    LinkedIn({
-      clientId: process.env.LINKEDIN_CLIENT_ID as string,
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET as string,
+    // GitHub OAuth
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
     }),
     // Credentials (Email/Password)
     CredentialsProvider({

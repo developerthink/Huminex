@@ -1,16 +1,15 @@
-'use server';
+"use server";
 
-import { auth } from '@/auth';
-import connectDB from '@/config/db';
-import Notification from '@/models/notification';
-import { revalidatePath } from 'next/cache';
-
+import { auth } from "@/auth";
+import connectDB from "@/config/db";
+import Notification from "@/models/notification";
+import { revalidatePath } from "next/cache";
 
 export async function createNotificationAction({
   title,
   email,
   content,
-  receiver_id
+  receiver_id,
 }: {
   title: string;
   email?: string;
@@ -21,8 +20,8 @@ export async function createNotificationAction({
 
   if (!session) {
     return {
-      error: 'Unauthorized',
-      data: null
+      error: "Unauthorized",
+      data: null,
     };
   }
 
@@ -35,24 +34,30 @@ export async function createNotificationAction({
       email,
       content,
       receiver_id,
-      sender_id: session.user.id
+      sender_id: session.user.id,
     });
 
     // Populate sender details in response
-    const populatedNotification = await notification.populate('sender_id', 'name email image');
-
+    const populatedNotification = await notification.populate(
+      "sender_id",
+      "name email image"
+    );
+    const serializedNotification = JSON.parse(
+      JSON.stringify(populatedNotification)
+    );
     // Optional: Revalidate cache for paths that display notifications
-    revalidatePath('/notifications');
+    revalidatePath("/notifications");
+    console.log("Notification created:", serializedNotification, title);
 
     return {
-      error: null,
-      data: populatedNotification
+      error: null,  
+      data: serializedNotification,
     };
   } catch (error) {
-    console.error('Error creating notification:', error);
+    console.error("Error creating notification:", error);
     return {
-      error: 'Internal server error',
-      data: null
+      error: "Internal server error",
+      data: null,
     };
   }
 }

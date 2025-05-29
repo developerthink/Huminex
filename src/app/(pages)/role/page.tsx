@@ -11,7 +11,7 @@ export default async function RolePage() {
   }
 
   return (
-    <div className="container flex h-screen w-full bg-muted/20 flex-col items-center justify-center">
+    <div className=" h-screen w-full grid place-items-center">
       <RoleSelection />
     </div>
   );

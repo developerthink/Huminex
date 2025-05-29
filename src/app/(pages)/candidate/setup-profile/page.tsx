@@ -16,6 +16,9 @@ import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { LucideLoader } from "lucide-react";
+import { getSession } from "@/actions/auth.action";
+import { useQuery } from "@tanstack/react-query";
 
 // Options for the multiselect (skill)
 const frameworks: Option[] = [
@@ -80,6 +83,10 @@ interface FormData {
 // Main ProfileSetupPage Component
 const ProfileSetupPage: React.FC = () => {
   const router = useRouter();
+  const {data}=useQuery({
+    queryKey:["session"],
+    queryFn:getSession,
+  })
   
   // Form state using useState
   const [formData, setFormData] = useState<FormData>({
@@ -146,11 +153,11 @@ const ProfileSetupPage: React.FC = () => {
         <Image src="/logo.png" alt="Logo" width={80} height={80} className="brightness-105" />
         <h2 className="text-2xl font-semibold ">Set Up Your Profile</h2>
       </div>
-      <Card className="max-w-3xl bg-white p-7 w-full">
+      <Card className="max-w-3xl shadow-xl border border-input/50 bg-white p-7 w-full">
         {/* Header Section */}
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Hi, User.</h1>
+            <h1 className="text-lg font-semibold text-gray-900">Hi, {data?.user?.name}.</h1>
             <p className="text-sm text-gray-600">
               Welcome to AI Interviewer. Let's get started by setting up your profile
             </p>
@@ -162,7 +169,7 @@ const ProfileSetupPage: React.FC = () => {
           >
             {isLoading ? (
               <>
-                <span className="animate-spin mr-2">◌</span>
+                <span className="animate-spin mr-2"><LucideLoader/></span>
                 Saving...
               </>
             ) : (
@@ -230,7 +237,7 @@ const ProfileSetupPage: React.FC = () => {
           {/* skill of Interest */}
           <div className="space-y-1 col-span-2">
             <Label className="text-sm font-medium text-gray-700">
-              Which skill are you interested in working?
+              Which skill are you interested in working? (add up to 8){" "}
               <span className="text-red-500">*</span>
             </Label>
             <MultipleSelector
@@ -246,6 +253,7 @@ const ProfileSetupPage: React.FC = () => {
                   No results found
                 </p>
               }
+              maxSelected={8}
               disabled={isLoading}
             />
           </div>

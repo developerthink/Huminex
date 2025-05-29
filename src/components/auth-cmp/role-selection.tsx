@@ -60,7 +60,7 @@ export default function RoleSelection() {
 
   return (
     <div>
-      <Card className="flex flex-col items-center p-10 w-full max-w-2xl">
+      <Card className="flex flex-col items-center p-10 w-full mx-auto shadow-xl border border-input/50">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Logo" width={80} height={80} className="brightness-105"/>
           <h1 className="text-2xl font-bold text-gray-900">Select User Type</h1>
@@ -83,7 +83,7 @@ export default function RoleSelection() {
                 className={`flex flex-col items-center p-6 rounded-lg border transition-all duration-200 w-full
                 ${
                   isSelected || isHovered
-                    ? "bg-primary text-white border-primary"
+                    ? "bg-primary text-white border-primary/50"
                     : "bg-white text-gray-900 border-gray-200"
                 }
                 hover:bg-primary hover:text-white hover:border-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}

@@ -132,7 +132,7 @@ export async function GET() {
     }, { hiredCount: 0, rejectedCount: 0, pendingCount: 0 });
 
     const recentApplications = applicationsResult[0].recentApplications;
-
+ console.log("the recent applications", recentApplications);
     return NextResponse.json({
       error: null,
       data: {

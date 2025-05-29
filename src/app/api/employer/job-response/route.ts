@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
 
     revalidatePath("/employer/dashboard/all-applicants");
 
+    console.log("applications", session)
     return NextResponse.json({
       error: null,
       data: applications
