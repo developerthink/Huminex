@@ -14,7 +14,6 @@ const PermissionWrapper = ({
         queryFn: isPermissionAllowed,
     });
 
-    console.log("permission data", permissionData)
 
     const showNotification = () => {
         toast.message('Permission Required', {

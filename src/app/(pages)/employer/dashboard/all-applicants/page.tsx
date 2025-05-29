@@ -40,7 +40,6 @@ const JobResponsePage = () => {
     queryFn: getJobResponses,
   });
 
-  console.log("job response", responseData);
 
   const updateStatusMutation = useMutation({
     mutationFn: ({

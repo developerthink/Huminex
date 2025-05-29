@@ -167,7 +167,6 @@ export default function RecruitmentDashboard() {
     }
   }, [analyticsData?.data?.recentJobs]);
 
-  console.log("the analytics data", analyticsData);
 
   const applicationColumns = [
     { accessor: 'id', header: 'Application ID', isVisible: false },
