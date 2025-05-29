@@ -26,7 +26,7 @@ const getNotificationIcon = (title: string) => {
 
 const NotificationCard = ({ notification }: { notification: Notification }) => {
   const IconComponent = getNotificationIcon(notification.title);
-  
+
   return (
     <Card className="mb-4 border transition-shadow">
       <CardContent className="p-4">
@@ -36,9 +36,10 @@ const NotificationCard = ({ notification }: { notification: Notification }) => {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-medium mb-1">{notification.title}</h3>
-            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-              {notification.content}
-            </p>
+            <div
+              className="!text-[14px]"
+              dangerouslySetInnerHTML={{ __html: notification.content }}
+            />
             <p className="text-xs text-muted-foreground">
               {new Date(notification.createdAt).toLocaleDateString('en-US', {
                 month: 'short',
@@ -63,7 +64,7 @@ const NotificationsPage = () => {
 
   if (isLoading) {
     return (
-      <WbLoader/>
+      <WbLoader />
     );
   }
 
@@ -84,9 +85,11 @@ const NotificationsPage = () => {
       </div>
       <br />
       <div className="space-y-4 w-full">
-        {notifications?.map((notification: Notification) => (
-          <NotificationCard key={notification._id} notification={notification} />
-        ))}
+        <div className='grid grid-cols-2 gap-6'>
+          {notifications?.map((notification: Notification) => (
+            <NotificationCard key={notification._id} notification={notification} />
+          ))}
+        </div>
         {notifications?.length === 0 && (
           <p className="flex items-center gap-2 text-xl flex-col"><BiSolidNotification className="w-20 h-20 text-primary" />No notifications found</p>
         )}
