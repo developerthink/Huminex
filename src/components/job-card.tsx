@@ -7,6 +7,7 @@ import {
   Briefcase,
   Calendar,
   Users,
+  LucideLoader,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -183,9 +184,10 @@ const JobCard: React.FC<JobCardProps> = ({
             onClick={handleApply}
             disabled={applyMutation.isPending}
             className={
-              applyMutation.isPending ? "opacity-75 cursor-not-allowed" : ""
+              applyMutation.isPending ? "opacity-75 cursor-not-allowed flex items-center" : ""
             }
           >
+           { applyMutation.isPending && <LucideLoader className="ml-2 animate-spin" />}
             {applyMutation.isPending ? "Applying..." : "Apply Now"}
           </Button>
         </div>
