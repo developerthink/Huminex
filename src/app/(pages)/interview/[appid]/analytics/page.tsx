@@ -59,6 +59,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getAnalyticsData } from "@/actions/checkpointer";
 
 const AnalyticsPage = () => {
+  const router = useRouter();
   const params = useParams();
   const appId = params.appid as string;
   const { data, isLoading, error } = useQuery({
@@ -98,7 +99,6 @@ const AnalyticsPage = () => {
     );
   }
 
-  const router = useRouter();
   const {
     applicationData,
     conversationsData,
@@ -235,43 +235,51 @@ const AnalyticsPage = () => {
       <div className="max-w-7xl mx-auto p-4 w-full m-2">
         <div>
           {/* Header Section */}
-          <div className="flex flex-col lg:flex-row gap-6 ">
+          <div className="flex flex-col lg:flex-row gap-6">
             {/* Job Details */}
             <div className="flex-1">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h1 className="text-3xl font-bold text-slate-800 mb-2">
-                    {applicationData.jobId.title}
+                    {applicationData?.jobId?.title ?? "Untitled Job"}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-3 ">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
                       <span className="capitalize">
-                        {applicationData.jobId.location}
+                        {applicationData?.jobId?.location ?? "Unknown Location"}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
                       <span className="capitalize">
-                        {applicationData.jobId.workType}
+                        {applicationData?.jobId?.workType ?? "Unknown Type"}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getJobTypeColor(
-                      applicationData.jobId.jobType
-                    )}`}
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                      applicationData?.jobId?.jobType
+                        ? getJobTypeColor(applicationData.jobId.jobType)
+                        : "border-gray-200 text-gray-500"
+                    }`}
                   >
-                    {applicationData.jobId.jobType}
+                    {applicationData?.jobId?.jobType ?? "N/A"}
                   </span>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(
-                      applicationData.jobId.interviewSettings.difficultyLevel
-                    )}`}
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                      applicationData?.jobId?.interviewSettings?.difficultyLevel
+                        ? getDifficultyColor(
+                            applicationData.jobId.interviewSettings
+                              .difficultyLevel
+                          )
+                        : "border-gray-200 text-gray-500"
+                    }`}
                   >
-                    {applicationData.jobId.interviewSettings.difficultyLevel}
+                    {applicationData?.jobId?.interviewSettings
+                      ?.difficultyLevel ?? "N/A"}
                   </span>
                 </div>
               </div>
@@ -284,8 +292,10 @@ const AnalyticsPage = () => {
               {/* Profile Image */}
               <div className="flex-shrink-0">
                 <img
-                  src={applicationData.candidateId.image}
-                  alt={applicationData.candidateId.name}
+                  src={
+                    applicationData?.candidateId?.image ?? "/default-avatar.png"
+                  }
+                  alt={applicationData?.candidateId?.name ?? "Candidate"}
                   className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
                 />
               </div>
@@ -294,37 +304,51 @@ const AnalyticsPage = () => {
               <div className="flex-1">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h2 className="text-2xl font-semibold  mb-1">
-                      {applicationData.candidateId.name}
+                    <h2 className="text-2xl font-semibold mb-1">
+                      {applicationData?.candidateId?.name ??
+                        "Unknown Candidate"}
                     </h2>
-                    <p className=" mb-2">{applicationData.candidateId.email}</p>
+                    <p className="mb-2">
+                      {applicationData?.candidateId?.email ??
+                        "No email available"}
+                    </p>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                      applicationData.hiringStatus
-                    )}`}
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                      applicationData?.hiringStatus
+                        ? getStatusColor(applicationData.hiringStatus)
+                        : "border-gray-200 text-gray-500"
+                    }`}
                   >
-                    {applicationData.hiringStatus}
+                    {applicationData?.hiringStatus ?? "Unknown Status"}
                   </span>
                 </div>
 
                 {/* Skills */}
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium  mb-2">Top Skills</h3>
+                  <h3 className="text-sm font-medium mb-2">Top Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {applicationData.candidateId.skill
-                      .slice(0, 5)
-                      .map((skill: string, index: number) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-primary/30 border !border-primary/40 backdrop-blur-2xl !text-white rounded-full text-sm font-medium  transition-colors"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    {applicationData.candidateId.skill.length > 5 && (
+                    {applicationData?.candidateId?.skill?.length > 0 ? (
+                      applicationData.candidateId.skill
+                        .slice(0, 5)
+                        .map((skill: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-primary/30 border !border-primary/40 backdrop-blur-2xl !text-white rounded-full text-sm font-medium transition-colors"
+                          >
+                            {skill ?? "Unknown Skill"}
+                          </span>
+                        ))
+                    ) : (
                       <span className="px-3 py-1 bg-primary/30 border !border-primary/40 backdrop-blur-2xl !text-white rounded-full text-sm font-medium">
-                        +{applicationData.candidateId.skill.length - 5} more
+                        No skills listed
+                      </span>
+                    )}
+                    {applicationData?.candidateId?.skill?.length > 5 && (
+                      <span className="px-3 py-1 bg-primary/30 border !border-primary/40 backdrop-blur-2xl !text-white rounded-full text-sm font-medium">
+                        +
+                        {(applicationData?.candidateId?.skill?.length ?? 0) - 5}{" "}
+                        more
                       </span>
                     )}
                   </div>
@@ -332,9 +356,9 @@ const AnalyticsPage = () => {
 
                 {/* Social Links */}
                 <div className="flex items-center gap-4">
-                  <span className="text-sm font-medium ">Connect:</span>
+                  <span className="text-sm font-medium">Connect:</span>
                   <div className="flex gap-3">
-                    {applicationData.candidateId.socialLinks.linkedin && (
+                    {applicationData?.candidateId?.socialLinks?.linkedin && (
                       <a
                         href={applicationData.candidateId.socialLinks.linkedin}
                         target="_blank"
@@ -344,7 +368,7 @@ const AnalyticsPage = () => {
                         <Linkedin className="w-4 h-4" />
                       </a>
                     )}
-                    {applicationData.candidateId.socialLinks.github && (
+                    {applicationData?.candidateId?.socialLinks?.github && (
                       <a
                         href={applicationData.candidateId.socialLinks.github}
                         target="_blank"
@@ -354,7 +378,7 @@ const AnalyticsPage = () => {
                         <Github className="w-4 h-4" />
                       </a>
                     )}
-                    {applicationData.candidateId.socialLinks.portfolio && (
+                    {applicationData?.candidateId?.socialLinks?.portfolio && (
                       <a
                         href={`https://${applicationData.candidateId.socialLinks.portfolio}`}
                         target="_blank"
@@ -364,7 +388,7 @@ const AnalyticsPage = () => {
                         <Globe className="w-4 h-4" />
                       </a>
                     )}
-                    {applicationData.candidateId.socialLinks.x && (
+                    {applicationData?.candidateId?.socialLinks?.x && (
                       <a
                         href={applicationData.candidateId.socialLinks.x}
                         target="_blank"
@@ -374,6 +398,14 @@ const AnalyticsPage = () => {
                         <Twitter className="w-4 h-4" />
                       </a>
                     )}
+                    {!applicationData?.candidateId?.socialLinks?.linkedin &&
+                      !applicationData?.candidateId?.socialLinks?.github &&
+                      !applicationData?.candidateId?.socialLinks?.portfolio &&
+                      !applicationData?.candidateId?.socialLinks?.x && (
+                        <span className="text-sm text-gray-400">
+                          No social links available
+                        </span>
+                      )}
                   </div>
                 </div>
               </div>
