@@ -39,7 +39,6 @@ const Dashboard = () => {
 
   const fetchApplications = async () => {
     const response = await axios.get("/api/applications/user");
-    console.log("response on home", response)
     const { applications, totalApplications, hired, rejected, pending } =
       response.data.data;
     return {

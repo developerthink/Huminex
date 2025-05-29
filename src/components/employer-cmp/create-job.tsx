@@ -169,7 +169,7 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
   const router = useRouter();
 
   const onSubmit = (values: JobFormValues) => {
-    console.log(values);
+    console.log("Form Submitted");
   };
   const [step, setStep] = useState(1);
 
@@ -377,7 +377,6 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
       queryClient.invalidateQueries({ queryKey: ['emp-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['employerAnalytics'] });
 
-      console.log("response of edit or add job", response.data);
 
       toast.success(isEditing ? 'Job updated successfully' : 'Job created successfully');
       router.push(`/jobs/${response.data.data._id}`);

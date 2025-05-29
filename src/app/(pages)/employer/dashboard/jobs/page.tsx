@@ -18,6 +18,7 @@ import Link from 'next/link';
 import WbLoader from "@/components/global-cmp/wbLoader";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MdErrorOutline } from 'react-icons/md';
+import Image from "next/image";
 
 const fetchJobs = async () => {
   const response = await axios.get('/api/employer/jobs');
@@ -295,7 +296,11 @@ const page = () => {
           PRIMARY: "var(--background)",
           SECONDARY: "#F5F7F6",
         }}
-        noDataMessage={isLoading ? <WbLoader /> : "No jobs found"}
+        noDataMessage={isLoading ? <WbLoader /> : <div className='min-h-48 grid place-items-center'>
+          <Image src="/nodata.png" alt="no-data" width={200} height={200} />
+          <p className="text-center text-gray-500">No data available</p>
+          <CreateJob />
+        </div>}
         data={tableData || []}
       />
 

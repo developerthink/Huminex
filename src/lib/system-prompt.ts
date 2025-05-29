@@ -1,6 +1,4 @@
 export const systemPrompt = (appData: any) => {
-  console.log(appData, "This is appData");
-
   // Default values for critical fields to prevent undefined errors
   const candidateName = appData?.candidateId?.name || "Candidate";
   const jobTitle = appData?.jobId?.title || "unspecified role";
