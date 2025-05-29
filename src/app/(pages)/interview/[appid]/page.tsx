@@ -13,7 +13,7 @@ import { BsBuildingFillCheck, BsThreeDotsVertical } from "react-icons/bs";
 import { Card } from "@/components/ui/card";
 import { FaRegComment } from "react-icons/fa";
 import { RiVoiceAiFill } from "react-icons/ri";
-import { FiPhoneOff } from "react-icons/fi";
+import { FiLoader, FiPhoneOff } from "react-icons/fi";
 import WebcamFrame from "@/components/global-cmp/webcam-frame";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
@@ -21,6 +21,9 @@ import Image from "next/image";
 import { endConversation, getApplicationDetails } from "@/actions/checkpointer";
 import PermissionRequest from "@/components/global-cmp/permission";
 import { createNotificationAction } from "@/actions/notification";
+import { IoMdMic, IoMdMicOff } from "react-icons/io";
+import { BiConversation } from "react-icons/bi";
+import EmojiBubble from "@/components/global-cmp/emoji-bubble";
 
 interface Message {
   role: "user" | "assistant";
@@ -661,11 +664,9 @@ const AgentModel = () => {
             </span>
           </div>
           {interviewState === "starting" && (
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              <span className="text-sm text-primary">
-                Starting interview...
-              </span>
+            <div className="flex items-center text-primary space-x-2">
+              <FiLoader className="animate-spin w-5 h-5" />
+              <span className="text-sm">Starting interview...</span>
             </div>
           )}
         </div>
@@ -709,18 +710,25 @@ const AgentModel = () => {
               </span>
             </div>
           )}
+
+          <div className="flex items-center gap-3 rounded-full absolute bottom-2 right-2 bg-white/30 text-white p-1 px-3">
+            <button className="*:w-5 *:h-5">
+              {isWebCamOn ? <Video /> : <VideoOff />}
+            </button>
+            <button>{isMicOn ? <IoMdMic /> : <IoMdMicOff />}</button>
+          </div>
         </Card>
 
         {/* Right Panel */}
         <div className="lg:w-1/3 grid grid-rows-2 gap-4 overflow-hidden">
           {/* Conversation Panel */}
           <Card className="p-4 gap-2 bg-white rounded-lg shadow">
-            <div className="flex border-b justify-between items-center pb-4">
+            <div className="flex border-b justify-between items-center pb-1.5">
               <h2
                 className="text-lg font-semibold flex items-center gap-2"
                 aria-label="Interview Conversation"
               >
-                <FaRegComment />
+                <BiConversation />
                 Interview Conversation
               </h2>
               <button
@@ -739,7 +747,7 @@ const AgentModel = () => {
               {context.map((msg, index) => (
                 <div
                   key={index}
-                  className={`p-2 rounded-lg flex gap-2 ${
+                  className={`p-2 rounded-md flex gap-2 ${
                     msg.role === "assistant"
                       ? "bg-primary/20 text-primary border-l-4 border-primary"
                       : "bg-gray-100 text-gray-700 border-l-4 border-gray-400"
@@ -761,9 +769,25 @@ const AgentModel = () => {
           </Card>
 
           {/* AI Interviewer Status */}
-          <Card className="w-full grid place-items-center text-2xl text-white bg-primary relative">
-            <div className="text-center">
-              <h2 className="mb-2">AI Interviewer</h2>
+          <Card className="w-full grid place-items-center text-2xl overflow-hidden text-white aiCard bg-primary/20 border-4 border-primary">
+            <div className="rounded-full p-2 bg-primary w-[100px] aspect-video absolute blur-3xl right-5 bottom-5"></div>
+            <button className="absolute text-primary rounded-full p-1 bg-primary/30 bottom-4 right-4">
+              {interviewState === "active" ? (
+                <IoMdMicOff className="size-6" />
+              ) : (
+                <IoMdMic className="size-6" />
+              )}
+            </button>
+            <div className="text-center ring-5 rounded-full ring-primary/50 relative">
+              <div
+                className={`absolute bg-primary rounded-full ${
+                  interviewState === "active" && isSpeaking
+                    ? " animate-ping"
+                    : ""
+                }  inset-0 scale-75`}
+              ></div>
+              <div className=" bg-cover relative z-20 animate bg-no-repeat bg-[url('https://img.icons8.com/color/200/administrator-male--v1.png')] aspect-square w-20 rounded-full bg-primary ring ring-primary/50"></div>
+              {/* <h2 className="mb-2">AI Interviewer</h2>
               <div className="text-sm opacity-80">
                 {interviewState === "starting" && "Initializing..."}
                 {interviewState === "active" &&
@@ -773,7 +797,7 @@ const AgentModel = () => {
                     ? "Listening..."
                     : "Ready")}
                 {interviewState === "ended" && "Interview Ended"}
-              </div>
+              </div> */}
             </div>
           </Card>
         </div>
@@ -827,14 +851,7 @@ const AgentModel = () => {
           )}
         </Button>
 
-        <Button
-          className="size-12"
-          variant="outline"
-          size="icon"
-          aria-label="More Options"
-        >
-          <BsThreeDotsVertical className="size-5" />
-        </Button>
+        <EmojiBubble />
       </div>
       <br />
       <div className="p-0.5 bgGrad text-center fixed bottom-0 inset-x-0 text-white">

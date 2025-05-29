@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -345,4 +346,9 @@ button{
   50% {
     transform: scale(1.2, 1);
   }
+}
+
+.aiCard {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
