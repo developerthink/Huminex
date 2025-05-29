@@ -51,6 +51,7 @@ import { useRouter } from "next/navigation";
 import { createJob } from "@/actions/action";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import PermissionWrapper from "../permission-wrapper";
 
 const steps = [
   {
@@ -445,7 +446,9 @@ const CreateJob: React.FC<JobPostingWizardProps> = ({ jobToEdit, isEditing, open
     >
       {!isEditing && (
         <DialogTrigger asChild>
-          <Button className="w-full" onClick={() => setIsOpen(true)}>Create Job</Button>
+          <PermissionWrapper handleSubmit={() => setIsOpen(true)}>
+            <Button className="w-full">Create Job</Button>
+          </PermissionWrapper>
         </DialogTrigger>
       )}
       <DialogContent className="flex flex-col text-white gap-0 p-0  overflow-hidden  h-[90vh] w-[60vw] [&>button:last-child]:top-3.5">
