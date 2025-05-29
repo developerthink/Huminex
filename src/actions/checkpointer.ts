@@ -6,7 +6,6 @@ import Application from "@/models/application";
 import { auth } from "@/auth";
 import OpenAI from "openai";
 
-
 export const endConversation = async (appId: string) => {
   try {
     await connectDB();
@@ -104,7 +103,7 @@ export const getApplicationDetails = async (appId: string) => {
 // Helper function to safely parse JSON strings
 const safeJsonParse = (jsonString: string): any => {
   try {
-    return jsonString;
+    return JSON.parse(jsonString);
   } catch (error) {
     console.error("Error parsing JSON:", error);
     console.error("Original string:", jsonString);
@@ -115,7 +114,7 @@ const safeJsonParse = (jsonString: string): any => {
 const openai = new OpenAI({
   apiKey: JSON.parse(process.env.OPENAI_API_KEY as string)[0],
   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // Increased to 30 seconds
 });
 
 const chatOpenAI = async (analyticsData: any) => {
@@ -295,31 +294,72 @@ const chatOpenAI = async (analyticsData: any) => {
 
 export const fetchAllConversations = async (appId: string) => {
   try {
-    const conversations = await Conversation.find({
-      appId: appId,
-    });
+    // Ensure database connection with better error handling
+    await connectDB();
+    
+    // Add timeout and better error handling for the query
+    const conversations : any = await Promise.race([
+      Conversation.find({ appId: appId }).lean().maxTimeMS(10000), // 20 second timeout
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 15000)
+      )
+    ]);
+    
+    if (!conversations || conversations.length === 0) {
+      console.log(`No conversations found for appId: ${appId}`);
+      return {
+        data: [],
+        error: null,
+      };
+    }
+    
     const serializeData = JSON.parse(JSON.stringify(conversations));
     return {
       data: serializeData,
       error: null,
     };
-  } catch (error) {
+  } catch (error : any) {
     console.error("Error fetching conversations:", error);
+    
+    // More specific error handling
+    if (error.message?.includes('timeout') || error.message?.includes('buffering timed out')) {
+      return {
+        data: [],
+        error: "Database connection timeout. Please try again.",
+      };
+    }
+    
     return {
       data: [],
-      error: error,
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
 };
 
 export const getAnalyticsData = async (appId: string) => {
   try {
-    // Step 1: Fetch all conversations
-    const { data: conversations, error: fetchError } =
-      await fetchAllConversations(appId);
-    if (fetchError || !conversations || conversations.length === 0) {
-      throw new Error("No conversations found or error fetching conversations");
+    console.log(`Starting analytics data generation for appId: ${appId}`);
+    
+    // Step 1: Fetch all conversations with better error handling
+    const { data: conversations, error: fetchError } = await fetchAllConversations(appId);
+    
+    if (fetchError) {
+      console.error("Fetch error:", fetchError);
+      return {
+        data: null,
+        error: `Error fetching conversations: ${fetchError}`,
+      };
     }
+    
+    if (!conversations || conversations.length === 0) {
+      console.log("No conversations found");
+      return {
+        data: null,
+        error: "No conversations found for this application. Please complete the interview first.",
+      };
+    }
+
+    console.log(`Found ${conversations.length} conversations`);
 
     // Step 2: Format the conversation into a proper dialogue
     let formattedConversation = [];
@@ -327,19 +367,39 @@ export const getAnalyticsData = async (appId: string) => {
       const entry = conversations[i];
 
       // Parse interviewer response safely
-      const interviewerData = safeJsonParse(entry.interviewerResponse);
-      const interviewerResponse = interviewerData?.aiResponse || "";
+      let interviewerData;
+      try {
+        interviewerData = typeof entry.interviewerResponse === 'string' 
+          ? JSON.parse(entry.interviewerResponse) 
+          : entry.interviewerResponse;
+      } catch (error) {
+        console.error(`Error parsing interviewer response for conversation ${i}:`, error);
+        interviewerData = { aiResponse: entry.interviewerResponse || "" };
+      }
+      
+      const interviewerResponse = interviewerData?.aiResponse || interviewerData?.response || "";
 
       // Parse candidate response safely
-      const candidateData = safeJsonParse(entry.candidateResponse);
-      const candidateResponse = candidateData?.candidateResponse || "";
+      let candidateData;
+      try {
+        candidateData = typeof entry.candidateResponse === 'string' 
+          ? JSON.parse(entry.candidateResponse) 
+          : entry.candidateResponse;
+      } catch (error) {
+        console.error(`Error parsing candidate response for conversation ${i}:`, error);
+        candidateData = { candidateResponse: entry.candidateResponse || "" };
+      }
+      
+      const candidateResponse = candidateData?.candidateResponse || candidateData?.response || "";
 
       // Add interviewer response (interviewer speaks first)
-      formattedConversation.push({
-        speaker: "Interviewer",
-        message: interviewerResponse,
-        questionNumber: `Q${i + 1}`, // Label questions as Q1, Q2, etc.
-      });
+      if (interviewerResponse) {
+        formattedConversation.push({
+          speaker: "Interviewer",
+          message: interviewerResponse,
+          questionNumber: `Q${i + 1}`, // Label questions as Q1, Q2, etc.
+        });
+      }
 
       // Add candidate response if it exists
       if (candidateResponse) {
@@ -350,32 +410,75 @@ export const getAnalyticsData = async (appId: string) => {
       }
     }
 
+    if (formattedConversation.length === 0) {
+      return {
+        data: null,
+        error: "No valid conversation data found to analyze.",
+      };
+    }
+
+    console.log(`Formatted ${formattedConversation.length} conversation entries`);
+
     // Step 3: Send the formatted conversation to chatOpenAI for analytics
-    const analyticsResponse = await chatOpenAI(conversations);
+    let analyticsResponse;
+    try {
+      console.log("Sending data to AI for analysis...");
+      analyticsResponse = await Promise.race([
+        chatOpenAI(conversations),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('AI analysis timeout')), 45000)
+        )
+      ]);
+      console.log("AI analysis completed");
+    } catch (error : any) {
+      console.error("Error in AI analysis:", error);
+      return {
+        data: null,
+        error: `Error generating AI analysis: ${error.message}`,
+      };
+    }
 
     // Step 4: Parse the response and return the analytics data
-    let analyticsData;
+    let analyticsData : any;
     try {
-      analyticsData = JSON.parse(
-        analyticsResponse.choices[0].message.content || "{}"
-      );
+      const responseContent = (analyticsResponse as any).choices[0]?.message?.content;
+      if (!responseContent) {
+        throw new Error("Empty response from AI");
+      }
+      
+      analyticsData = JSON.parse(responseContent);
+      console.log("Analytics data parsed successfully");
     } catch (error) {
       console.error("Error parsing analytics response:", error);
-      throw new Error(
-        "Invalid JSON response from AI: " +
-          analyticsResponse.choices[0].message.content
-      );
+      console.error("Raw response:", (analyticsResponse as any) .choices[0]?.message?.content);
+      return {
+        data: null,
+        error: "Error parsing AI analysis response. Please try again.",
+      };
     }
 
     return {
-      data: { analyticsData, conversationsData: formattedConversation },
+      data: { 
+        analyticsData, 
+        conversationsData: formattedConversation,
+        totalConversations: conversations.length 
+      },
       error: null,
     };
-  } catch (error) {
+  } catch (error : any) {
     console.error("Error in getAnalyticsData:", error);
+    
+    // More specific error messages
+    if (error.message?.includes('timeout')) {
+      return {
+        data: null,
+        error: "Request timed out. Please check your internet connection and try again.",
+      };
+    }
+    
     return {
       data: null,
-      error: "Error generating analytics data",
+      error: error instanceof Error ? error.message : "An unexpected error occurred while generating analytics data.",
     };
   }
 };
