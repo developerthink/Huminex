@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
+import PermissionWrapper from "./permission-wrapper";
 
 interface JobCardProps {
   job: any;
@@ -94,7 +95,7 @@ const JobCard: React.FC<JobCardProps> = ({
                   title: `${job.title} at ${job.employerId.companyDetails.name}`,
                   text: `${job.title} at ${job.employerId.companyDetails.name}\n\nApply now: ${window.location.origin}/jobs/${job._id}`,
                 })
-                .catch((error) => console.log('Error sharing:', error));
+                  .catch((error) => console.log('Error sharing:', error));
               }
             }}
             aria-label="Share job"
@@ -177,17 +178,20 @@ const JobCard: React.FC<JobCardProps> = ({
               Details
             </Button>
           </Link>
-          <Button
-            size={hasMore ? "default" : "sm"}
-            onClick={handleApply}
-            disabled={applyMutation.isPending}
-            className={
-              applyMutation.isPending ? "opacity-75 cursor-not-allowed flex items-center" : ""
-            }
-          >
-           { applyMutation.isPending && <LucideLoader className="ml-2 animate-spin" />}
-            {applyMutation.isPending ? "Applying..." : "Apply Now"}
-          </Button>
+          <PermissionWrapper handleSubmit={handleApply}>
+            <Button
+              size={hasMore ? "default" : "sm"}
+
+              disabled={applyMutation.isPending}
+              className={
+                applyMutation.isPending ? "opacity-75 cursor-not-allowed" : ""
+              }
+            >
+             { applyMutation.isPending && <LucideLoader className="ml-2 animate-spin" />}
+             {applyMutation.isPending ? "Applying..." : "Apply Now"}
+            </Button>
+          </PermissionWrapper>
+
         </div>
       </CardFooter>
     </Card>

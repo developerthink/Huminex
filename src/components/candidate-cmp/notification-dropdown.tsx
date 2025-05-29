@@ -1,25 +1,28 @@
-'use client'
+"use client";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotifications } from "@/lib/api-functions/cnadidate/notifications.api";
-import { Bell, Briefcase, Calendar, Star, UserCheck } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Bell, Briefcase, Star, UserCheck } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { MdOutlineEmail } from "react-icons/md";
 import Link from "next/link";
 import { BiSolidNotification } from "react-icons/bi";
+import { ImUserTie } from "react-icons/im";
 
-const NotificationDropdown = (
-    {redirect}: {redirect: string}
-) => {
+const NotificationDropdown = ({ redirect }: { redirect: string }) => {
   const { data: notifications } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: fetchNotifications
+    queryKey: ["notifications"],
+    queryFn: fetchNotifications,
   });
 
   const getNotificationIcon = (title: string) => {
-    if (title.toLowerCase().includes('application')) return Briefcase;
-    if (title.toLowerCase().includes('interview')) return Calendar;
-    if (title.toLowerCase().includes('profile')) return UserCheck;
-    if (title.toLowerCase().includes('job match')) return Star;
+    if (title.toLowerCase().includes("application")) return Briefcase;
+    if (title.toLowerCase().includes("interview")) return ImUserTie;
+    if (title.toLowerCase().includes("profile")) return UserCheck;
+    if (title.toLowerCase().includes("job match")) return Star;
     return Bell;
   };
 
@@ -37,41 +40,45 @@ const NotificationDropdown = (
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="p-2 border-b">
-          <h4 className="text-sm font-semibold">Recent Notifications</h4>
+          <h4 className="text-sm font-semibold p-2">Recent Notifications</h4>
         </div>
         <div className="max-h-[300px] overflow-y-auto">
           {notifications?.slice(0, 3).map((notification: any) => {
             const IconComponent = getNotificationIcon(notification.title);
             return (
-              <div
-                key={notification._id}
-                className="p-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-start gap-2">
-                  <div className="p-1.5 rounded-full bg-blue-100">
-                    <IconComponent className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{notification.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {notification.content}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(notification.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
+              <div className="border-b p-2 flex gap-2">
+                <div className="p-1.5 rounded-full h-fit bg-primary/20">
+                  <IconComponent className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">
+                    {notification.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(notification.createdAt).toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
+                  </p>
+                  <div
+                    className="!text-[14px]"
+                    dangerouslySetInnerHTML={{ __html: notification.content }}
+                  />
                 </div>
               </div>
             );
           })}
           {(!notifications || notifications.length === 0) && (
             <div className="p-3 text-center text-sm text-muted-foreground">
-              <p className="flex items-center gap-2 flex-col"><BiSolidNotification className="w-10 h-10 text-primary" />No notifications found</p>
+              <p className="flex items-center gap-2 flex-col">
+                <BiSolidNotification className="w-10 h-10 text-primary" />
+                No notifications found
+              </p>
             </div>
           )}
         </div>

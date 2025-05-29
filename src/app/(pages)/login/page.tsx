@@ -2,6 +2,7 @@ import { signIn } from "@/auth";
 import CredentialSignIn from "@/components/auth-cmp/credential-sigin";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { FaGithub } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 import { TbBrandLinkedinFilled } from "react-icons/tb";
 
@@ -72,12 +73,12 @@ export default function page() {
             <Button
               type="submit"
               name="provider"
-              value="linkedin"
+              value="github"
               variant="outline"
-              className="w-full flex items-center  text-blue-600 justify-center gap-2"
+              className="w-full flex items-center   justify-center gap-2"
             >
-              <TbBrandLinkedinFilled  className="size-6" />
-               LinkedIn
+              <FaGithub className="size-6" />
+               GitHub
             </Button>
           </form>
 

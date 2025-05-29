@@ -83,18 +83,15 @@ const AgentModel = () => {
   });
 
   // Debounced toast to prevent multiple renders
-  const showToast = useCallback(
-    (message: string) => {
-      if (toastIdRef.current) {
-        toast.dismiss(toastIdRef.current);
-      }
-      toastIdRef.current = toast.error(message, {
-        position: "top-center",
-        duration: 5000,
-      });
-    },
-    []
-  );
+  const showToast = useCallback((message: string) => {
+    if (toastIdRef.current) {
+      toast.dismiss(toastIdRef.current);
+    }
+    toastIdRef.current = toast.error(message, {
+      position: "top-center",
+      duration: 5000,
+    });
+  }, []);
 
   // Request camera and microphone permissions
   const requestPermissions = useCallback(async () => {
@@ -118,7 +115,9 @@ const AgentModel = () => {
     } catch (err) {
       console.error("Permission error:", err);
       setPermissionError("Camera and microphone permissions are required.");
-      showToast("Camera and microphone permissions are required to start the interview.");
+      showToast(
+        "Camera and microphone permissions are required to start the interview."
+      );
       setInterviewState("idle");
     }
   }, [showToast]);
@@ -141,8 +140,12 @@ const AgentModel = () => {
 
   // Set interview duration from applicationData and store start time in localStorage
   useEffect(() => {
-    if (applicationData?.jobId?.interviewSettings?.interviewDuration && interviewState === "starting") {
-      const durationInMinutes = applicationData.jobId.interviewSettings.interviewDuration;
+    if (
+      applicationData?.jobId?.interviewSettings?.interviewDuration &&
+      interviewState === "starting"
+    ) {
+      const durationInMinutes =
+        applicationData.jobId.interviewSettings.interviewDuration;
       const durationInMs = durationInMinutes * 60 * 1000; // Convert to milliseconds
       setDuration(durationInMs);
       const startTime = Date.now();
@@ -159,7 +162,9 @@ const AgentModel = () => {
 
     const timer = setInterval(() => {
       const currentTime = Date.now();
-      const storedStartTime = parseInt(localStorage.getItem(`${appid}-time`) || "0");
+      const storedStartTime = parseInt(
+        localStorage.getItem(`${appid}-time`) || "0"
+      );
       const elapsedTime = currentTime - (storedStartTime || startTiming);
       const newRemainingTime = Math.max(0, duration - elapsedTime);
       setRemainingTime(newRemainingTime);
@@ -180,7 +185,15 @@ const AgentModel = () => {
     }, 1000); // Update every second
 
     return () => clearInterval(timer);
-  }, [interviewState, startTiming, duration, isNearEnd, appid, stopListening, stopSpeaking]);
+  }, [
+    interviewState,
+    startTiming,
+    duration,
+    isNearEnd,
+    appid,
+    stopListening,
+    stopSpeaking,
+  ]);
 
   // Format remaining time as MM:SS
   const formatTime = (ms: number) => {
@@ -361,7 +374,9 @@ const AgentModel = () => {
     const checkBrowser = () => {
       const browser = detectBrowser();
       if (browser === "Brave") {
-        toast.error("Brave Browser is not supported. Please use Google Chrome or Microsoft Edge.");
+        toast.error(
+          "Brave Browser is not supported. Please use Google Chrome or Microsoft Edge."
+        );
         setIsBrave(true);
       }
     };
@@ -508,17 +523,17 @@ const AgentModel = () => {
     setInterviewState("ended");
     stopListening();
     stopSpeaking();
+    await createNotificationAction({
+      title: "Interview Completed",
+      email: applicationData.jobId?.employerId?.email,
+      content: `<p>Hi ${applicationData.jobId?.employerId?.name},</p>
+      <p>Interview with <b style="color: blue;">${applicationData?.candidateId?.name}</b> is completed.</p>
+      <p style="color: blue; text-decoration: underline;"><a href="${process.env.NEXT_PUBLIC_APP_URL}/interview/${appid}/analytics">View Detailed Report</a></p>`,
+      receiver_id: applicationData.jobId?.employerId?._id,
+    });
     localStorage.removeItem(`${appid}-time`); // Clean up localStorage
     await endConversation(appid as string);
     router.push(`/interview/${appid}/analytics`);
-    await createNotificationAction({
-      title: "New Interview",
-      email: applicationData.jobId?.employerId?.email,
-      content: `<p>Hi ${applicationData.jobId?.employerId?.name},</p>
-      <p>You have a new interview request.</p>
-      <p>Click <a href="${process.env.NEXT_PUBLIC_APP_URL}/interview/${appid}">here</a> to accept the interview.</p>`,
-      receiver_id: applicationData.jobId?.employerId?._id
-    });
   };
 
   const handleMicToggle = () => {
@@ -573,7 +588,8 @@ const AgentModel = () => {
         />
         <div className="text-center">
           <h2 className="text-xl">
-            Brave Browser is not supported. <br /> Please use Google Chrome or Microsoft Edge.
+            Brave Browser is not supported. <br /> Please use Google Chrome or
+            Microsoft Edge.
           </h2>
           <Button onClick={() => router.back()} className="mt-4">
             Go Back
@@ -586,7 +602,7 @@ const AgentModel = () => {
   if (interviewState === "idle" || interviewState === "requesting") {
     return (
       <div className="h-screen flex items-center justify-center flex-col gap-4">
-        <PermissionRequest 
+        <PermissionRequest
           permissions={permissionsGranted}
           permissionError={permissionError || ""}
           onPermissionToggle={requestPermissions}
