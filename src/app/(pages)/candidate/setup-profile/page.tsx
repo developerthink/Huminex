@@ -107,9 +107,7 @@ const ProfileSetupPage: React.FC = () => {
 
   // Handle multiselect changes
   const handleDomainsChange = (selected: Option[]) => {
-    if (selected.length <= 3) {
-      setFormData((prev) => ({ ...prev, skill: selected }));
-    }
+    setFormData((prev) => ({ ...prev, skill: selected }));
   };
 
   // Handle hometown state selection
@@ -119,7 +117,7 @@ const ProfileSetupPage: React.FC = () => {
 
   // Handle form submission
   const handleSubmit = async () => {
-    if (!formData.graduationYear || !formData.college || formData.skill.length === 0 || !formData.hometownState) {
+    if (!formData.graduationYear || !formData.college || !formData.hometownState || formData.skill.length === 0) {
       toast.error("Please fill in all required fields");
       return;
     }

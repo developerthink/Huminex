@@ -39,6 +39,7 @@ const Dashboard = () => {
 
   const fetchApplications = async () => {
     const response = await axios.get("/api/applications/user");
+    console.log("response on home", response)
     const { applications, totalApplications, hired, rejected, pending } =
       response.data.data;
     return {
@@ -53,6 +54,7 @@ const Dashboard = () => {
         status: application.interviewstatus || "PENDING",
         hiringStatus: application.hiringStatus || "PENDING",
         appliedDate: new Date(application.createdAt).toLocaleDateString(),
+        applicationId: application._id,
       })),
     };
   };
@@ -91,27 +93,28 @@ const Dashboard = () => {
 
   const columns = [
     { header: "ID", accessor: "jobId", hidden: true },
-
     {
       header: "Company",
       accessor: "company",
       render: (_: any, row: any) => (
-        <div className="flex items-center gap-2">
+        <Link href={`/jobs/${row.jobId}`} target="_black">
+          <div className="flex items-center gap-2">
           <div className="w-8 h-8 relative">
             <Image
               src={row.logo || "/default-company-logo.png"}
               alt={row.company}
               fill
-              className=" object-cover"
+              className="rounded-md object-cover"
             />
           </div>
           <span>{row.company}</span>
         </div>
+        </Link>
       ),
     },
     { header: "Job Title", accessor: "title" },
     {
-      header: "Location",
+      header: "Work type",
       accessor: "location",
       render: (_: any, row: any) =>
         row.location.charAt(0).toUpperCase() + row.location.slice(1),
@@ -123,19 +126,39 @@ const Dashboard = () => {
         row.jobType.charAt(0).toUpperCase() + row.jobType.slice(1),
     },
     {
-      header: "Status",
-      accessor: "status",
+      header: "Hiring Status",
+      accessor: "hiringStatus",
       render: (_: any, row: any) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${row.hiringStatus === "PENDING"
+          className={`px-2 py-1 rounded-full text-xs ${
+            row.hiringStatus === "PENDING"
               ? "bg-yellow-100 text-yellow-800"
               : row.hiringStatus === "HIRED"
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
         >
           {row.hiringStatus.charAt(0).toUpperCase() + row.hiringStatus.slice(1)}
         </span>
+      ),
+    },
+    {
+      header: "Interview Analytics",
+      accessor: "interviewAnalytics",
+      render: (_: any, row: any) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            router.push(
+              row.status === "PENDING"
+                ? `/interview/${row.applicationId}`
+                : `/interview/${row.applicationId}/analytics`
+            )
+          }
+        >
+          {row.status === "PENDING" ? "Give Interview" : "View Analytics"}
+        </Button>
       ),
     },
     { header: "Applied Date", accessor: "appliedDate" },
@@ -174,25 +197,7 @@ const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      {/* <div className="flex items-center gap-2 mt-1">
-                        <p className="text-gray-600 text-sm mb-4">
-                          {profileLoading
-                            ? "Loading profile information..."
-                            : profileData.isComplete
-                            ? "Great job completing your profile!"
-                            : "You're on the right track! Complete your profile to get noticed"}
-                        </p>
-                        <Button
-                          className="bg-green-500 hover:bg-green-600 transition-colors text-white font-medium py-2 px-4 rounded-md w-fit"
-                          onClick={() =>
-                            router.push("/candidate/dashboard/profile")
-                          }
-                        >
-                          Complete Now
-                        </Button>
-                      </div> */}
                     </div>
-                    {/* <div className="flex-1 flex flex-col justify-center"></div> */}
                     <div className="bg-orange-50 !text-nowrap p-4 border-2 border-orange-100 rounded-lg">
                       <h4 className="font-medium text-gray-800 mb-3">
                         {profileLoading
@@ -311,12 +316,6 @@ const Dashboard = () => {
                   <div className="max-h-96 overflow-hidden overflow-y-auto">
                     <TabsContent value="recommended">
                       <div className="mt-4 text-gray-700">
-                        {/* <h3 className="text-lg font-semibold mb-2">
-                          Recommended Jobs
-                        </h3>
-                        <p className="text-gray-600">
-                          Jobs tailored to your profile and preferences.
-                        </p> */}
                         {jobsData?.recommendedJobs.map((job: any) => (
                           <JobCard hasMore={false} key={job._id} job={job} />
                         ))}
@@ -338,12 +337,6 @@ const Dashboard = () => {
                     </TabsContent>
                     <TabsContent value="invited">
                       <div className="mt-4 text-gray-700 text-center">
-                        {/* <h3 className="text-lg font-semibold mb-2">
-                          Invited Jobs
-                        </h3>
-                        <p className="text-gray-600">
-                          Jobs you've been invited to apply for.
-                        </p> */}
                         <div>
                           {jobsData?.invitedJobs.map((job: any) => (
                             <JobCard hasMore={false} key={job._id} job={job} />
@@ -371,8 +364,6 @@ const Dashboard = () => {
             </div>
           </section>
 
-          {/* Interview Stats */}
-
           {/* Recent Interviews */}
           <section>
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
@@ -384,7 +375,7 @@ const Dashboard = () => {
                 noDataMessage={
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                      <ClipboardList className=" wszelkie-8 h-8 text-gray-400" />
+                      <ClipboardList className="w-8 h-8 text-gray-400" />
                     </div>
                     <p className="text-gray-500">No recent interviews</p>
                     <p className="text-gray-400 text-sm mt-1">

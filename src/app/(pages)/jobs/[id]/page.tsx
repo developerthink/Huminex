@@ -20,6 +20,7 @@ import {
 import { fetchJobDetails } from '@/lib/api-functions/home.api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Define TypeScript interfaces based on Mongoose schemas
 interface Interviewer {
@@ -222,20 +223,29 @@ const JobPage = () => {
               <CardContent className="p-6">
                 {/* Salary */}
                 <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">{job.location}</span>
+                    <span className="text-sm text-gray-600">{job.employerId.companyDetails.location}</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">${job.salaryRange.start}k - ${job.salaryRange.end}k</div>
+                  <div className="text-2xl font-bold text-gray-900">{job.salaryRange.start} - {job.salaryRange.end}LPA</div>
                   <div className="text-sm text-gray-600">Avg. Salary</div>
                 </div>
 
                 {/* Company */}
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    {/* <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                       <Building className="h-4 w-4 text-white" />
-                    </div>
+                    </div> */}
+
+                    <Image
+                      src={job.employerId.companyDetails.logo}
+                      alt={job.employerId.companyDetails.name}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full"
+                    />
+
                     <div>
                       <div className="font-medium text-gray-900">{job.employerId.companyDetails.name}</div>
                       <div className="text-sm text-gray-600">{job.employerId.email}</div>
@@ -270,8 +280,8 @@ const JobPage = () => {
                 {/* Apply Button */}
                 <Link href={`/candidate/dashboard/jobs`}>
                   <Button className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-medium">
-                  Apply for this job
-                </Button>
+                    Apply for this job
+                  </Button>
                 </Link>
               </CardContent>
             </Card>
