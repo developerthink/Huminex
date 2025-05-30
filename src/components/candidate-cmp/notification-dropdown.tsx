@@ -1,7 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotifications } from "@/lib/api-functions/cnadidate/notifications.api";
-import { Bell, Briefcase, Star, UserCheck } from "lucide-react";
+import { Bell, Briefcase, Calendar, Star, UserCheck } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -11,6 +11,7 @@ import { MdOutlineEmail } from "react-icons/md";
 import Link from "next/link";
 import { BiSolidNotification } from "react-icons/bi";
 import { ImUserTie } from "react-icons/im";
+import { SlEnvolopeLetter } from "react-icons/sl";
 
 const NotificationDropdown = ({ redirect }: { redirect: string }) => {
   const { data: notifications } = useQuery({
@@ -19,10 +20,11 @@ const NotificationDropdown = ({ redirect }: { redirect: string }) => {
   });
 
   const getNotificationIcon = (title: string) => {
-    if (title.toLowerCase().includes("application")) return Briefcase;
-    if (title.toLowerCase().includes("interview")) return ImUserTie;
-    if (title.toLowerCase().includes("profile")) return UserCheck;
-    if (title.toLowerCase().includes("job match")) return Star;
+    if (title.toLowerCase().includes('application')) return Briefcase;
+    if (title.toLowerCase().includes('interview')) return Calendar;
+    if (title.toLowerCase().includes('profile')) return UserCheck;
+    if (title.toLowerCase().includes('Job Invitation')) return SlEnvolopeLetter;
+    if (title.toLowerCase().includes('Welcome to Huminex')) return Bell;
     return Bell;
   };
 

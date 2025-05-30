@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/config/db';
 import User from '@/models/user/user';
 import { RoleType } from '@/types/models/user/user';
+import { createNotificationAction } from '@/actions/notification';
 
 interface RegisterRequest {
   name: string;
@@ -54,6 +55,14 @@ export async function POST(request: Request) {
       email: email.toLowerCase().trim(),
       password: password,
     });
+
+    await createNotificationAction({
+      title: 'Welcome to Huminex',
+      email: email,
+      content: `Thank you for signing up with <b>Huminex</b>. We are excited to have you on board!`,
+      receiver_id: user._id.toString(),
+      sender_id: user._id.toString(),
+    })
 
     // Return success response with user data (without password)
     const { password: _, ...userData } = user.toObject();

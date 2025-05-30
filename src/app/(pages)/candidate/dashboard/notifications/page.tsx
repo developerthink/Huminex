@@ -8,6 +8,7 @@ import { Bell, Briefcase, Calendar, Star, UserCheck } from 'lucide-react';
 import { BiSolidNotification } from "react-icons/bi";
 import WbLoader from '@/components/global-cmp/wbLoader';
 import { MdErrorOutline } from 'react-icons/md';
+import { SlEnvolopeLetter } from 'react-icons/sl';
 
 interface Notification {
   _id: string;
@@ -20,7 +21,8 @@ const getNotificationIcon = (title: string) => {
   if (title.toLowerCase().includes('application')) return Briefcase;
   if (title.toLowerCase().includes('interview')) return Calendar;
   if (title.toLowerCase().includes('profile')) return UserCheck;
-  if (title.toLowerCase().includes('job match')) return Star;
+  if (title.toLowerCase().includes('Job Invitation')) return SlEnvolopeLetter;
+  if (title.toLowerCase().includes('Welcome to Huminex')) return Bell;
   return Bell;
 };
 

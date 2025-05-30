@@ -8,6 +8,7 @@ import { Bell, Briefcase, Calendar, Star, UserCheck } from 'lucide-react';
 import { BiSolidNotification } from "react-icons/bi";
 import WbLoader from '@/components/global-cmp/wbLoader';
 import { MdErrorOutline } from 'react-icons/md';
+import { SlEnvolopeLetter } from 'react-icons/sl';
 
 interface Notification {
   _id: string;
@@ -20,13 +21,13 @@ const getNotificationIcon = (title: string) => {
   if (title.toLowerCase().includes('application')) return Briefcase;
   if (title.toLowerCase().includes('interview')) return Calendar;
   if (title.toLowerCase().includes('profile')) return UserCheck;
-  if (title.toLowerCase().includes('job match')) return Star;
+  if (title.toLowerCase().includes('Job Invitation')) return SlEnvolopeLetter;
+  if (title.toLowerCase().includes('Welcome to Huminex')) return Bell;
   return Bell;
 };
 
 const NotificationCard = ({ notification }: { notification: Notification }) => {
   const IconComponent = getNotificationIcon(notification.title);
-  
   return (
     <Card className="mb-4 border transition-shadow">
       <CardContent className="p-4">
@@ -36,9 +37,10 @@ const NotificationCard = ({ notification }: { notification: Notification }) => {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-medium mb-1">{notification.title}</h3>
-            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-              {notification.content}
-            </p>
+            <div
+              className="!text-[14px]"
+              dangerouslySetInnerHTML={{ __html: notification.content }}
+            />
             <p className="text-xs text-muted-foreground">
               {new Date(notification.createdAt).toLocaleDateString('en-US', {
                 month: 'short',
