@@ -13,6 +13,7 @@ import { createNotificationAction } from "@/actions/notification";
 import User from "@/models/user/user";
 
 // Get all jobs
+// Get all jobs
 export async function GET(request: NextRequest) {
   const session = await auth();
   try {
@@ -98,7 +99,7 @@ export async function GET(request: NextRequest) {
       } as PipelineStage
     ];
 
-    // Get invited jobs for the current user
+    // Get invited jobs for the current user and exclude applied ones
     const invitedJobsPipeline: PipelineStage[] = [
       {
         $match: {
@@ -109,7 +110,36 @@ export async function GET(request: NextRequest) {
           }
         }
       } as PipelineStage,
-      ...employerDetailsPipeline
+      {
+        $lookup: {
+          from: "applications",
+          let: { jobId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$jobId", "$$jobId"] },
+                    { $eq: ["$candidateId", new mongoose.Types.ObjectId(session?.user?.id)] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "applications"
+        }
+      } as PipelineStage,
+      {
+        $match: {
+          applications: { $size: 0 }
+        }
+      } as PipelineStage,
+      ...employerDetailsPipeline,
+      {
+        $project: {
+          applications: 0 // Exclude applications field from output
+        }
+      } as PipelineStage
     ];
 
     // Get all jobs without search filter for recommendations
