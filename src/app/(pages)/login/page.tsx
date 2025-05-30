@@ -1,5 +1,6 @@
 import { signIn } from "@/auth";
 import CredentialSignIn from "@/components/auth-cmp/credential-sigin";
+import Logo from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { FaGithub } from "react-icons/fa6";
@@ -21,20 +22,13 @@ export default function page() {
       <div className="flex w-full max-w-4xl z-10 relative rounded-lg overflow-hidden shadow-2xl border border-slate-100">
         <div className="hidden bgGrad bg-cover bg-center bg-no-repeat  w-1/2 p-3 relative text-white md:flex ">
           <div className="w-full m-10 z-10">
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              className="brightness-105"
-              width={80}
-              height={80}
-            />
+          <Logo className="w-16"/>
+
             <br />
-            <h2 className="text-4xl font-semibold mb-6">
-              Continue Your Journey Today
-            </h2>
+            <h2 className="text-4xl font-semibold mb-6">Log In to Huminex</h2>
             <p className="text-lg opacity-80">
-              Join India's top talent network and secure rewarding, long-term
-              job opportunities
+              Log in to your Huminex account to access your dashboard and manage
+              your job applications, interview schedules, and more.
             </p>
           </div>
         </div>
@@ -44,9 +38,7 @@ export default function page() {
           <br />
           <div>
             <h2 className="text-3xl font-bold mb-6 leading-0 ">Log In</h2>
-            <p className="text-lg opacity-80 ">
-              Welcome Back to your account
-            </p>
+            <p className="text-lg opacity-80 ">Welcome Back to your account</p>
           </div>
           <br />
 
@@ -78,7 +70,7 @@ export default function page() {
               className="w-full flex items-center   justify-center gap-2"
             >
               <FaGithub className="size-6" />
-               GitHub
+              GitHub
             </Button>
           </form>
 
