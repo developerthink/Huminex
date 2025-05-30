@@ -40,14 +40,14 @@ const BookDemo = () => {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button >
+                <Button className='rounded-xl border border-muted/30'>
                     Book a Demo
                 </Button>
             </DialogTrigger>
-            <DialogContent className="p-0 sm:max-w-[700px] overflow-hidden rounded-lg">
+            <DialogContent className="p-0 sm:max-w-[700px] overflow-hidden !border-none rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     {/* Left side - Background and testimonial */}
-                    <div className="bgGrad p-8 text-white hidden md:block">
+                    <div className="bgGrad  p-8 text-white hidden md:block">
                         <div className="flex items-center mb-6">
                             <Calendar className="mr-2 h-6 w-6" />
                             <h3 className="text-xl font-semibold">Demo</h3>
@@ -55,10 +55,8 @@ const BookDemo = () => {
 
                         <h2 className="text-3xl font-bold mb-4">Request a call with our expert</h2>
 
-                        <p className="mt-10 opacity-90">
-                            Our experts are ready to help you bring your vision to life. Whether you're planning a
-                            corporate event, a product launch, or need custom solutions, we provide personalized
-                            guidance to meet your unique needs.
+                        <p className="mt-6 opacity-90">
+                        Our experts are ready to help you realize your vision with personalized solutions for events, product launches, and more.
                         </p>
                     </div>
 
