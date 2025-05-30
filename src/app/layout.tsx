@@ -18,7 +18,7 @@ const secondary = Work_Sans({
 
 export const metadata: Metadata = {
   title: "Huminex",
-  description: "Transform your hiring process with AI-driven interviews that identify top talent efficiently and fairly.",
+  description: "Huminex is a cutting-edge recruiting platform that leverages AI to revolutionize the hiring process. By combining intelligent candidate matching, AI-powered interviews, and advanced analytics, Huminex streamlines recruitment while ensuring fair and efficient talent acquisition.",
   keywords: ["AI interviews", "hiring platform", "recruitment solution", "automated interviews", "AI talent screening", "huminex", "huminex ai", "huminex ai interviews", "huminex ai hiring", "huminex ai recruitment", "huminex ai talent screening"],
   authors: [{ name: "Huminex" }],
   metadataBase: new URL('https://huminex.co'),
@@ -26,8 +26,8 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "Huminex - Next-gen Human-like Interviews",
-    description: "Transform your hiring process with AI-driven interviews that identify top talent efficiently and fairly.",
+    title: "Huminex - Uniting Talent & Opportunity with AI",
+    description: "Huminex is a cutting-edge recruiting platform that leverages AI to revolutionize the hiring process. By combining intelligent candidate matching, AI-powered interviews, and advanced analytics, Huminex streamlines recruitment while ensuring fair and efficient talent acquisition.",
     url: 'https://huminex.co',
     siteName: 'Huminex',
     locale: 'en_US',
@@ -43,12 +43,12 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Huminex - Next-gen Human-like Interviews',
-    description: 'Transform your hiring process with AI-driven interviews that identify top talent efficiently and fairly.',
+    title: 'Huminex - Uniting Talent & Opportunity with AI',
+    description: 'Huminex is a cutting-edge recruiting platform that leverages AI to revolutionize the hiring process. By combining intelligent candidate matching, AI-powered interviews, and advanced analytics, Huminex streamlines recruitment while ensuring fair and efficient talent acquisition.',
     creator: '@huminex',
     images: {
       url: '/og-image.png',
-      alt: 'Huminex - AI-Powered Interview Platform',
+      alt: 'Huminex - Uniting Talent & Opportunity with AI',
       width: 1200,
       height: 630,
     },
