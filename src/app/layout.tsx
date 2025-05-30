@@ -17,7 +17,7 @@ const secondary = Work_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Huminex",
+  title: "Huminex - Uniting Talent & Opportunity with AI",
   description: "Huminex is a cutting-edge recruiting platform that leverages AI to revolutionize the hiring process. By combining intelligent candidate matching, AI-powered interviews, and advanced analytics, Huminex streamlines recruitment while ensuring fair and efficient talent acquisition.",
   keywords: ["AI interviews", "hiring platform", "recruitment solution", "automated interviews", "AI talent screening", "huminex", "huminex ai", "huminex ai interviews", "huminex ai hiring", "huminex ai recruitment", "huminex ai talent screening"],
   authors: [{ name: "Huminex" }],
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Huminex - AI-Powered Interview Platform',
+        alt: 'Huminex - Uniting Talent & Opportunity with AI',
       }
     ],
   },
