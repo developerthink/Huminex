@@ -5,6 +5,7 @@ import connectDB from "./config/db";
 import { RoleType } from "./types/models/user/user";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
+import { createNotificationAction } from "./actions/notification";
 
 // Function to find or create user for OAuth providers
 const findOrCreateOAuthUser = async ({
@@ -30,6 +31,14 @@ const findOrCreateOAuthUser = async ({
     email,
     image,
   });
+
+  await createNotificationAction({
+    title: 'Welcome to Huminex',
+    email: email,
+    content: `Thank you for signing up with <b>Huminex</b>. We are excited to have you on board!`,
+    receiver_id: newUser._id.toString(),
+    sender_id: newUser._id.toString(),
+  })
 
   return newUser;
 };

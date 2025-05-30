@@ -9,6 +9,8 @@ import { jobSchema } from "./schema";
 import { fromZodError } from "zod-validation-error";
 import mongoose, { PipelineStage } from "mongoose";
 import type { JobType } from "@/types/models/job";
+import { createNotificationAction } from "@/actions/notification";
+import User from "@/models/user/user";
 
 // Get all jobs
 export async function GET(request: NextRequest) {
@@ -239,6 +241,35 @@ export async function POST(request: NextRequest) {
       price: 100,
       employerId: session.user.id
     });
+
+    if (validationResult.data.invitedCandidates?.length) {
+      try {
+        // First find all users concurrently
+        const userPromises = validationResult.data.invitedCandidates.map(candidate =>
+          User.findOne({ email: candidate.email })
+        );
+        const users = await Promise.all(userPromises);
+
+        // Then create all notifications concurrently
+        const notificationPromises = users
+          .filter(user => user !== null)
+          .map(user =>
+            createNotificationAction({
+              title: "Job Invitation",
+              content: `You have been invited to apply for this job <a href="/jobs/${job._id}"><b>${job.title}</b></a>`,
+              sender_id: session?.user.id,
+              receiver_id: user?._id,
+            })
+          );
+
+        // Wait for all notifications to complete
+        await Promise.all(notificationPromises);
+      } catch (error) {
+        console.error('Error sending notifications:', error);
+        // Continue with job creation even if notifications fail
+      }
+    }
+
 
     return NextResponse.json({
       error: null,
