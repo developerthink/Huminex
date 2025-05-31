@@ -3,6 +3,7 @@ import { Syne, Work_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import QueryProvider from "@/components/global-cmp/providers/query-provider";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const primary = Syne({
   subsets: ["latin"],
@@ -76,8 +77,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      
+    <html lang="en">    
       <body
         className={`${primary.variable} ${secondary.variable} font-primary antialiased`}
       >
@@ -86,6 +86,7 @@ export default function RootLayout({
         </QueryProvider>
         <Toaster richColors/>
       </body>
+      <GoogleAnalytics gaId={process.env.GA_ID as string} />
     </html>
   );
 }
